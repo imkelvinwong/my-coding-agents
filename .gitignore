@@ -1,0 +1,32 @@
+# Security / Credentials
+.env
+*.env
+.env.local
+*.pem
+*.key
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+
+# Logs & Test Artifacts
+*.log
+coverage/
+.coverage
+.pytest_cache/
+
+# Local Pipeline Tools
+.act/
+
+# OS-Generated Files
+.DS_Store
+Thumbs.db
+
+# IDE Configurations
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
