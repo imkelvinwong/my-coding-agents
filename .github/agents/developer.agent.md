@@ -36,24 +36,22 @@ Before writing a single line of code, verify all of the following. If any condit
 
    **If the document is a full design specification:** proceed to item 3.
 
-   **If the document header contains "No UI/UX design specification is required for this feature" (Non-UI Waiver):** verify all four required waiver elements are present before proceeding. Each element must be present and non-empty. Do not infer or approximate a missing element from surrounding content:
-
-   - **Element a — Architecture reference:** The waiver must contain an explicit reference to `md_docs/planner/active/<FEATURE_NAME>_ARCHITECTURE.md` by its exact path. A generic mention of "the architecture document" without the path does not satisfy this element.
-   - **Element b — Scope classification:** The waiver must contain the exact string `UI_NOT_REQUIRED` as its scope classification. A paraphrase such as "no UI work required" does not satisfy this element.
-   - **Element c — Evidence statement:** The waiver must contain a specific, non-generic statement explaining why no UI surface is affected by this feature. A statement such as "this feature has no UI" without explaining why is not specific enough to satisfy this element.
-   - **Element d — Explicit waiver statement:** The waiver must contain the exact sentence: "No UI/UX design specification is required for this feature. All design conformance checklist items are waived." A paraphrase or partial version of this sentence does not satisfy this element.
+   **If the document header contains "No UI/UX design specification is required for this feature" (Non-UI Waiver):** validate all four required waiver elements against the Non-UI Waiver Schema defined in `SKILL.md`. The schema specifies the exact required content for each element (a through d) and what does not satisfy each element. Each element must be present and non-empty. Do not infer or approximate a missing element from surrounding content.
 
    If all four elements are present: proceed to item 3. Skip all UI-specific implementation steps and design conformance checklist items. Note the validated waiver in the Completion Report.
 
-   If any element is missing: halt immediately. Do not proceed on a malformed waiver — a waiver missing any required element will be invalidated by the Reviewer as a Class B defect, forcing a full re-run. Notify the Orchestrator with the following information so it can correct the waiver without ambiguity: (1) which element is missing, identified by its letter label (a, b, c, or d) and its name; (2) what was found in the waiver at the location where that element should appear; (3) what the waiver must contain to satisfy that element. Do not attempt to infer what the Orchestrator intended — report the gap exactly as observed.
+   If any element is missing: halt immediately. Do not proceed on a malformed waiver — a waiver missing any required element will be invalidated by the Reviewer as a Class B defect, forcing a full re-run. Notify the Orchestrator with the following information so it can correct the waiver without ambiguity: (1) which element is missing, identified by its letter label (a, b, c, or d) and its name as defined in `SKILL.md`; (2) what was found in the waiver at the location where that element should appear; (3) what the waiver must contain to satisfy that element. Do not attempt to infer what the Orchestrator intended — report the gap exactly as observed.
 
    **Design document missing entirely:** halt immediately. Notify the Orchestrator to route to Designer. Do not treat a missing design document as equivalent to a Non-UI Waiver.
+
+   **Design document exists but matches neither format:** If the document exists, does not contain the Non-UI Waiver header, and does not contain all 10 required design specification section headers, halt immediately. Do not attempt to implement against a partially-written or structurally invalid document. Notify the Orchestrator with the specific structural gap found — which section headers are absent if the document appears to be a partial specification, or what the document header contains if it appears to be neither format. Route to Designer to produce a complete document.
 
 3. **The existing codebase has been examined for: naming conventions, folder structure, import patterns, state management approach, error handling conventions, and typing standards.** These are not background knowledge — they are constraints that the implementation must satisfy or explicitly justify deviating from.
 
 If a specification document is missing or the Non-UI Waiver is malformed, halt immediately and notify the Orchestrator with the following routing:
 - Architecture document missing → route to Planner
 - Design specification missing entirely → route to Designer
+- Design document exists but matches neither full-specification nor waiver format → route to Designer to produce a complete document, identifying the specific structural gap
 - Non-UI Waiver present but missing one or more required elements → route to Orchestrator to regenerate the waiver, identifying the specific missing element(s)
 
 Do not begin implementation under any circumstance until both documents are present, fully read, and — in the case of a Non-UI Waiver — validated against all four required elements.

@@ -96,6 +96,21 @@ Use this table to resolve the output path for each agent's deliverable. Agents m
 
 ---
 
+## Non-UI Waiver Schema
+
+The Non-UI Waiver is authored by the Orchestrator and written to `md_docs/designer/active/<FEATURE_NAME>_DESIGN.md`. It must contain exactly four elements. This is the single authoritative definition of those elements — all agents that author, validate, or consume a Non-UI Waiver must reference this schema rather than re-stating it independently.
+
+| Element | Label | Required Content |
+|---|---|---|
+| a | Architecture reference | An explicit reference to `md_docs/planner/active/<FEATURE_NAME>_ARCHITECTURE.md` by its exact path. A generic mention of "the architecture document" without the path does not satisfy this element. |
+| b | Scope classification | The exact string `UI_NOT_REQUIRED`. A paraphrase such as "no UI work required" does not satisfy this element. |
+| c | Evidence statement | A specific, non-generic statement explaining why no UI surface is affected by this feature. A statement such as "this feature has no UI" without explaining why is not specific enough to satisfy this element. |
+| d | Explicit waiver statement | The exact sentence: "No UI/UX design specification is required for this feature. All design conformance checklist items are waived." A paraphrase or partial version of this sentence does not satisfy this element. |
+
+All four elements must be present and non-empty. Do not infer or approximate a missing element from surrounding content. Any agent that finds a waiver with a missing element must halt and report the specific missing element by its letter label (a, b, c, or d) and name before taking any further action.
+
+---
+
 ## Core Rules
 
 1. **All contract filenames must follow the `<FEATURE_NAME>_<DOC_TYPE>.md` format.** Examples: `UserAuth_ARCHITECTURE.md`, `UserAuth_DESIGN.md`, `UserAuth_PIPELINE_EXECUTION_REPORT.md`. Review cycle files include a numeric suffix: `UserAuth_REVIEW_CYCLE_1.md`. Deviating from this format breaks session-recovery's artifact inventory scan.

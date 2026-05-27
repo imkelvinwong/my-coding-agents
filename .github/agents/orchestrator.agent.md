@@ -42,7 +42,7 @@ Before invoking any agent, construct and document an internal Pipeline Execution
 1. **Entry Point Determination** — Before constructing any plan, attempt to read `md_docs/*/active/` for files matching `<FEATURE_NAME>_*.md`. Apply the following three-branch logic exactly. Do not proceed past this step until the correct branch has been executed in full:
 
    **Branch A — Directory does not exist or is empty:**
-   This is a confirmed new pipeline run. Create the required directory structure per `markdown-file-management/SKILL.md` before invoking any agent. All `md_docs/{agent}/active/` and `md_docs/{agent}/archive/` directories must exist before any agent writes its first artifact. Proceed with standard Pre-Execution Planning from Step 2 onward.
+   This is a confirmed new pipeline run. Create the required directory structure per `SKILL.md` before invoking any agent. All `md_docs/{agent}/active/` and `md_docs/{agent}/archive/` directories must exist before any agent writes its first artifact. Proceed with standard Pre-Execution Planning from Step 2 onward.
 
    **Branch B — Directory exists and contains files matching `<FEATURE_NAME>_*.md`:**
    Do not construct a new Pipeline Execution Plan. Prior artifacts exist for this feature and their state must be assessed before any action is taken. Invoke `session-recovery.prompt.md` in full (Steps 1–9) before taking any other action. Session recovery is non-optional when prior artifacts exist; skipping it risks overwriting valid completed work or running agents against stale inputs. Resume standard Pre-Execution Planning only after session recovery has produced a Recovery Decision and that decision is "Resume."
@@ -89,7 +89,7 @@ Each step produces a specific artifact that the next step requires:
 
 **Enforcement Rule — Designer:** If the UI Scope Gate is `UI_REQUIRED` and `md_docs/designer/active/<FEATURE_NAME>_DESIGN.md` does not exist, Designer must run before Developer. Invoking Developer without a design specification when the gate is `UI_REQUIRED` is a pipeline ordering violation.
 
-**Enforcement Rule — Non-UI Waiver:** If the UI Scope Gate is `UI_NOT_REQUIRED`, the Orchestrator authors the waiver and skips Designer. The waiver content must include: reference to `md_docs/planner/active/<FEATURE_NAME>_ARCHITECTURE.md`, scope classification, evidence for why no UI surface is affected, and the explicit statement: "No UI/UX design specification is required for this feature. All design conformance checklist items are waived." Without this statement, the Reviewer cannot correctly apply the waiver checklist path.
+**Enforcement Rule — Non-UI Waiver:** If the UI Scope Gate is `UI_NOT_REQUIRED`, the Orchestrator authors the waiver and skips Designer. Author the waiver against the Non-UI Waiver Schema defined in `SKILL.md` — all four elements (a through d) must be present and satisfy the exact content requirements specified there. Do not paraphrase or approximate any element.
 
 **Enforcement Rule — Reviewer:** The Reviewer phase must always execute after Developer and before Builder. A build against unreviewed code is not recoverable by the Builder — defects introduced before review require Developer remediation, not build-time patching.
 
@@ -137,7 +137,7 @@ Read both staging output files. Validate that each file contains at minimum the 
 - `<FEATURE_NAME>_SPEC_INDEPENDENT_TESTS.md` must contain "Unit Tests" and "Edge Cases" sections, both non-empty.
 - `<FEATURE_NAME>_UI_DEPENDENT_TESTS.md` must contain "Component Tests" and "Accessibility Tests" sections, both non-empty (skip this file's validation if Agent B was not spawned).
 
-If validation passes, merge the staging file contents into the final test files in `md_docs/tester/active/`. Archive the staging files per the standard archive operation defined in `markdown-file-management/SKILL.md` using the same UTC timestamp batch as all other pipeline artifacts for this feature.
+If validation passes, merge the staging file contents into the final test files in `md_docs/tester/active/`. Archive the staging files per the standard archive operation defined in `SKILL.md` using the same UTC timestamp batch as all other pipeline artifacts for this feature.
 
 If validation fails (a required section is absent or empty), treat this as a Phase 2 abort: discard all staging content and fall back to sequential test generation.
 
@@ -157,12 +157,12 @@ Validate every item in the relevant checklist before passing work to the next ag
 ### Checkpoint — Designer Decision Output
 
 - If UI Scope Gate is `UI_REQUIRED`: Designer ran and `md_docs/designer/active/<FEATURE_NAME>_DESIGN.md` exists as a full specification. Verify it references the architecture document and covers every component in the architecture file structure.
-- If UI Scope Gate is `UI_NOT_REQUIRED`: Designer was skipped and `md_docs/designer/active/<FEATURE_NAME>_DESIGN.md` exists as an Orchestrator-authored Non-UI Waiver containing: architecture reference, scope rationale, evidence for no UI impact, and the explicit waiver statement. Verify all four elements are present.
+- If UI Scope Gate is `UI_NOT_REQUIRED`: Designer was skipped and `md_docs/designer/active/<FEATURE_NAME>_DESIGN.md` exists as an Orchestrator-authored Non-UI Waiver. Verify all four elements are present per the Non-UI Waiver Schema in `SKILL.md`.
 
 ### Checkpoint — After Designer
 
 - If `UI_REQUIRED`: `md_docs/designer/active/<FEATURE_NAME>_DESIGN.md` is non-empty and references `md_docs/planner/active/<FEATURE_NAME>_ARCHITECTURE.md` explicitly. Every component in the architecture file structure has a specification entry. All async data states (loading, empty, error, success) are specified for every data-driven component. Accessibility requirements are present for every interactive component.
-- If `UI_NOT_REQUIRED`: The Non-UI Waiver is valid per the content requirements above. No further design checkpoint items apply.
+- If `UI_NOT_REQUIRED`: The Non-UI Waiver is valid per the Non-UI Waiver Schema in `SKILL.md`. No further design checkpoint items apply.
 
 ### Checkpoint — After Developer
 

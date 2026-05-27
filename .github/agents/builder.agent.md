@@ -113,12 +113,14 @@ Once the build passes:
 
 Execute a minimal functional verification to confirm the application is running correctly. This is a baseline check, not a functional test. Do not perform user flow testing, data validation, or business logic assertions here — those are the Tester's responsibility.
 
+**Frontend applications — browser verification (required before evaluating the console error checklist item):** For any application with a frontend (React, Vue, or equivalent), use the browser tool to open the application root URL and navigate to the feature route before working through the checklist below. Capture all console output produced during the initial page load and during the navigation to the feature route. This step is not optional — server-side startup logs do not surface client-side runtime errors. Skipping the browser open means the console error checklist item cannot be evaluated and must be marked Fail by default.
+
 ### Smoke Test Checklist
 
 - [ ] **Application root URL returns a non-error response.** Confirm HTTP 200 (or an equivalent valid response for the application type, such as a rendered page or a JSON health response). An HTTP 4xx or 5xx at the root URL means the application is not running correctly regardless of what the build output showed.
 - [ ] **Primary feature route or screen loads without a runtime error.** Navigate to the route introduced by this feature. Confirm it renders without a thrown exception, a blank screen, or an error page. The content does not need to be populated with real data — it needs to not crash.
 - [ ] **API health endpoint responds if one is defined.** Send `GET /health` or `GET /api/status` (or the equivalent defined in the architecture) and confirm a non-error response. If no health endpoint exists, mark this item as "Not applicable."
-- [ ] **No JavaScript console errors are present on initial page load for frontend applications.** Console errors on page load indicate a runtime error that the build did not catch. These errors will produce test failures and must be resolved before signaling readiness for Tester.
+- [ ] **No JavaScript console errors are present on initial page load for frontend applications.** Evaluate this item using the console output captured during the browser verification step above — do not evaluate it from server-side logs alone. Console errors on page load indicate a runtime error that the build did not catch. These errors will produce test failures and must be resolved before signaling readiness for Tester.
 - [ ] **Database connection is established if applicable.** Verify this in the startup logs — look for confirmation messages like "Database connected" or "Migrations complete." Do not execute queries to verify the connection; that is the Tester's domain.
 - [ ] **All critical environment-dependent services have initialized correctly** per the startup logs. If the application depends on a cache, message queue, or external service, confirm that its initialization message appeared in the logs without an error.
 

@@ -36,7 +36,15 @@ Before beginning inspection, verify all of the following. A missing prerequisite
 
 1. **`md_docs/planner/active/<FEATURE_NAME>_ARCHITECTURE.md` exists and has been read in full.** The architecture document is your inspection reference for all structural, type, and API conformance items. Missing: halt and notify the Orchestrator.
 
-2. **`md_docs/designer/active/<FEATURE_NAME>_DESIGN.md` exists and has been read in full.** The design document — whether a full specification or a Non-UI Waiver — defines the design inspection path. Missing: halt and notify the Orchestrator.
+2. **`md_docs/designer/active/<FEATURE_NAME>_DESIGN.md` exists and has been read in full.** After reading, determine which of the following three states applies before proceeding:
+
+   **Full design specification:** The document contains all 10 required section headers. Apply the full inspection checklist.
+
+   **Non-UI Waiver:** The document header contains the exact statement "No UI/UX design specification is required for this feature." Apply the Non-UI Waiver Handling checklist path.
+
+   **Neither — document exists but matches neither format:** The document does not contain all 10 section headers and does not contain the Non-UI Waiver header. Halt immediately and notify the Orchestrator with the specific structural gap found — which section headers are absent if the document appears to be a partial specification, or what the document header contains if it appears to be neither format. Do not attempt to inspect against a partially-written or structurally invalid design document.
+
+   Missing entirely: halt and notify the Orchestrator.
 
 3. **`md_docs/developer/active/<FEATURE_NAME>_DEVELOPER_COMPLETION.md` exists and has been read in full.** The Developer Completion Report identifies all files created and modified, lists deviations and justifications, and states the Developer's self-review result. Missing: halt and notify the Orchestrator — the Developer phase is incomplete.
 
@@ -136,11 +144,7 @@ If any gap entry uses non-standard key names — aliases, abbreviations, alterna
 
 When the design document is an Orchestrator-authored Non-UI Waiver, apply this checklist path instead of the standard design conformance checklist:
 
-**Verify the waiver contains all four required elements:**
-- [ ] Reference to `md_docs/planner/active/<FEATURE_NAME>_ARCHITECTURE.md`
-- [ ] Scope classification: `UI_NOT_REQUIRED`
-- [ ] Evidence: specific statement of why no UI surface is affected
-- [ ] Explicit waiver statement: "No UI/UX design specification is required for this feature. All design conformance checklist items are waived."
+**Verify the waiver contains all four required elements** as defined in the Non-UI Waiver Schema in `SKILL.md` (elements a through d). Apply the exact content requirements from that schema — do not evaluate elements against a looser standard than what the schema specifies.
 
 **If any required element is missing:** Record a Class B defect — Specification Ambiguity (Orchestrator-authored waiver is incomplete). Route to Orchestrator for correction before proceeding.
 

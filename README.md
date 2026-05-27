@@ -30,7 +30,7 @@ The pipeline is designed for **continuous, compounding improvement**: every arti
 
 | File | Purpose |
 | --- | --- |
-| `markdown-file-management/SKILL.md` | Path resolution, directory creation, archive mechanics, and Fan-Out I/O isolation rules |
+| `markdown-file-management/SKILL.md` | Path resolution, directory creation, archive mechanics, Fan-Out I/O isolation rules, and the canonical Non-UI Waiver Schema |
 | `pipeline-analysis.prompt.md` | Runs a structured four-dimension pros/cons analysis of every pipeline file and produces a Decision Matrix |
 | `session-recovery.prompt.md` | Reconstructs pipeline state after a session interruption and resumes from the correct re-entry point |
 
@@ -161,6 +161,7 @@ The pipeline includes structured feedback loops that route failures strictly by 
 | Review defect — Class B | Reviewer | Planner or Designer → Developer → Reviewer | Planner or Designer |
 | Review defect — Class C | Reviewer | Halt — user intervention required | N/A |
 | Missing design spec (`UI_REQUIRED`) | Developer/Reviewer | Designer → Developer | Designer |
+| Design document exists but matches neither full-spec nor waiver format | Developer/Reviewer | Designer produces complete document → Developer | Designer |
 | Invalid or malformed Non-UI Waiver | Developer/Reviewer | Orchestrator regenerates waiver → Developer | Developer |
 | JSON scheduling payload absent/malformed | Orchestrator | Planner re-runs with specific parse error | Planner |
 | Fan-Out heartbeat or staging timeout | Orchestrator | Abort Fan-Out; discard staging; fall back | Tester (sequential) |
@@ -196,7 +197,7 @@ Files analyzed in pipeline execution order:
 * **Active vs. Archive**: All active contracts live in `active/`. Only the Orchestrator moves files to `archive/` upon completion or halt, appending a synchronized UTC timestamp (`<FEATURE_NAME>_<DOC_TYPE>_YYYYMMDDHHMMSS.md`).
 * **Section references**: Architecture document sections are numbered 1–11; Design document sections are 1–10. Reviewer defect reports cite these specific sections for exact traceability.
 * **Outcome Fields**: `decision_code` (`APPROVED` / `REJECTED`) and `status_code` (`PASSING` / `BLOCKED`) must be uppercase and accompanied by their respective detail blocks to be validated as complete.
-* **Non-UI Waiver**: Must include a 4-element structure referencing the architecture path, `UI_NOT_REQUIRED` classification, evidence statement, and a mandatory waived conformance sentence.
+* **Non-UI Waiver**: Must satisfy all four elements of the Non-UI Waiver Schema defined in `SKILL.md`. The schema is the single authoritative source for required content — agents author, validate, and consume the waiver against that definition.
 * **Specification Gap Protocol**: Gaps must be documented using exactly five snake_case keys (`gap_document`, `specification_gap_description`, `chosen_interpretation`, `rejected_alternatives`, and `risk_assessment`) or face rejection as a separate minor defect.
 
 ---
@@ -212,6 +213,6 @@ Files analyzed in pipeline execution order:
 | `reviewer.agent.md` | Quality gate — inspection, defect classification (A/B/C), `decision_code` output |
 | `builder.agent.md` | Build and smoke test executor — 3-attempt retry cap, escalation report, Completion Report |
 | `tester.agent.md` | Test suite producer and executor — Fan-Out mode, Heartbeat Monitor, `status_code` output |
-| `markdown-file-management/SKILL.md` | Path resolution, archive mechanics, Fan-Out I/O isolation rules, staging directory contract |
+| `markdown-file-management/SKILL.md` | Path resolution, archive mechanics, Fan-Out I/O isolation rules, staging directory contract, and canonical Non-UI Waiver Schema |
 | `pipeline-analysis.prompt.md` | Structured four-dimension pros/cons analysis with Decision Matrix and optional refinement mode |
 | `session-recovery.prompt.md` | 10-step state reconstruction, staging cleanup, stale contract detection, and re-entry determination |
