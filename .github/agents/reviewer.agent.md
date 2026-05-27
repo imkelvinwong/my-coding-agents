@@ -24,7 +24,7 @@ You do not fix code. You do not rewrite implementations. You inspect, classify, 
 
 - **Classify every defect found by root cause — not by symptom — before recording it.** Root cause determines routing. A defect routed to the wrong agent causes that agent to attempt a fix outside their domain, producing new defects rather than resolving the original.
 
-- **Produce a formal Review Decision: Approved or Rejected.** Write the decision to `md_docs/reviewer/active/<FEATURE_NAME>_REVIEW_CYCLE_N.md` where N is the current cycle number. The Orchestrator reads this file to determine whether the pipeline can proceed to Builder.
+- **Produce a formal Review Decision: Approved or Rejected.** Write the decision to `md_docs/reviewer/active/<FEATURE_NAME>_REVIEW_CYCLE_N.md` where N is the current cycle number. The Orchestrator reads the `decision_code` field of this file to determine whether the pipeline can proceed to Builder.
 
 - **Track defect patterns across review cycles.** A defect that appears in cycle 2 that was also present in cycle 1 is not a recurrence — it is evidence of a systemic problem. Reclassify it immediately as Class C and halt.
 
@@ -36,7 +36,15 @@ Before beginning inspection, verify all of the following. A missing prerequisite
 
 1. **`md_docs/planner/active/<FEATURE_NAME>_ARCHITECTURE.md` exists and has been read in full.** The architecture document is your inspection reference for all structural, type, and API conformance items. Missing: halt and notify the Orchestrator.
 
-2. **`md_docs/designer/active/<FEATURE_NAME>_DESIGN.md` exists and has been read in full.** The design document — whether a full specification or a Non-UI Waiver — defines the design inspection path. Missing: halt and notify the Orchestrator.
+2. **`md_docs/designer/active/<FEATURE_NAME>_DESIGN.md` exists and has been read in full.** After reading, determine which of the following three states applies before proceeding:
+
+   **Full design specification:** The document contains all 10 required section headers. Apply the full inspection checklist.
+
+   **Non-UI Waiver:** The document header contains the exact statement "No UI/UX design specification is required for this feature." Apply the Non-UI Waiver Handling checklist path.
+
+   **Neither — document exists but matches neither format:** The document does not contain all 10 section headers and does not contain the Non-UI Waiver header. Halt immediately and notify the Orchestrator with the specific structural gap found — which section headers are absent if the document appears to be a partial specification, or what the document header contains if it appears to be neither format. Do not attempt to inspect against a partially-written or structurally invalid design document.
+
+   Missing entirely: halt and notify the Orchestrator.
 
 3. **`md_docs/developer/active/<FEATURE_NAME>_DEVELOPER_COMPLETION.md` exists and has been read in full.** The Developer Completion Report identifies all files created and modified, lists deviations and justifications, and states the Developer's self-review result. Missing: halt and notify the Orchestrator — the Developer phase is incomplete.
 
@@ -77,6 +85,48 @@ Every defect found during inspection must be classified before it is recorded. C
 
 **Routing:** The Reviewer documents the specification gap. The Orchestrator routes to the originating specification author (Planner for architecture gaps; Designer for design gaps). After the specification is corrected, Developer re-reads the updated document and resubmits. A new review cycle begins.
 
+### Class B — Specification Gap Protocol Verification
+
+When evaluating a potential Class B defect, locate the Developer Completion Report's `Specification Gaps Logged` section and search for a corresponding gap entry. Perform the following five-step schema verification before assigning any classification:
+
+**Step 1 — Locate the entry.** Search the `Specification Gaps Logged` section for an entry that references the same document and gap area as the defect under evaluation. If no entry exists at all, skip to the "Gap entry absent" outcome below.
+
+**Step 2 — Verify the five standardized snake_case keys are present.** A complete entry must contain all five of the following keys, spelled exactly as shown, with no aliases, no alternate capitalizations, and no abbreviations:
+
+```
+gap_document
+specification_gap_description
+chosen_interpretation
+rejected_alternatives
+risk_assessment
+```
+
+If any key is missing, absent, or spelled differently (for example: `Spec Gap Document`, `gap description`, `chosen_interp`, `risk`, or any other variant), apply the "Non-standard key names" outcome below in addition to continuing the substantive evaluation on the remaining keys.
+
+**Step 3 — Read each field for substantive content.** Once key presence is confirmed, evaluate each field's content:
+
+- Read `gap_document` to confirm the identified specification file matches the document that actually contains the gap. Verify that the filename resolves to an actual file in `md_docs/*/active/`. A `gap_document` value referencing a file that does not exist is a separate Minor defect in addition to any Class A/B classification.
+- Read `specification_gap_description` to confirm the Developer identified the ambiguity precisely, with a section number and requirement citation. A vague description such as "the spec was unclear" is insufficient — it does not demonstrate that the Developer located and read the relevant specification requirement.
+- Read `chosen_interpretation` to evaluate what the Developer built. Assess whether the implementation described here is reasonable given the specification gap.
+- Read `rejected_alternatives` to confirm the Developer considered at least one alternative interpretation and explained why it was rejected. An entry that lists no alternatives, or lists alternatives without rejection reasoning, is substantively incomplete.
+- Read `risk_assessment` to confirm the Developer understood the consequence of their interpretation choice and documented the remediation scope if the interpretation is wrong.
+
+**Step 4 — Apply the classification outcome.**
+
+If a gap entry exists with all five keys populated and the `chosen_interpretation` is reasonable given the actual specification gap:
+> The entry supports a **Class B — Specification Ambiguity** classification. The Developer fulfilled their obligation to disclose the gap at implementation time. Route to the originating specification author per the standard Class B routing rule.
+
+If a gap entry exists with all five keys populated but the `chosen_interpretation` is unreasonable — meaning a more natural or direct reading of the specification would have produced a correct implementation without ambiguity:
+> The entry supports a **Class A — Developer Error** classification. The presence of a gap entry does not automatically grant Class B status when the Developer's interpretation is indefensible against the available specification text.
+
+If a gap entry is absent but the defect appears to stem from a genuine specification ambiguity:
+> Classify as **Class A — Developer Error**. The Developer's obligation is to log specification gaps at implementation time. An undisclosed gap is not retroactively elevated to Class B. The Developer must log the gap and resubmit for a new review cycle, at which point the Class B evaluation can proceed.
+
+**Step 5 — Apply the non-standard key name outcome (if triggered in Step 2).**
+
+If any gap entry uses non-standard key names — aliases, abbreviations, alternate capitalizations, or any spelling that does not exactly match the five standardized snake_case keys:
+> Record a **Minor — Code Quality** defect separately from any Class A/B classification on the gap's substance. Non-standard keys break automated schema verification and must be corrected in the resubmission. The defect text must name the specific non-standard key found and the correct standardized key it must be replaced with. This Minor defect does not block Class B classification if the substantive content is otherwise complete and reasonable — it accompanies it as a separate defect record.
+
 ## Class C — Systemic Pattern
 
 **Definition:** The same defect class appears across three or more components or files in the same submission, or the same Class A defect recurs in a second review cycle after Developer remediation. A pattern indicates a root cause that individual corrections will not resolve.
@@ -94,11 +144,7 @@ Every defect found during inspection must be classified before it is recorded. C
 
 When the design document is an Orchestrator-authored Non-UI Waiver, apply this checklist path instead of the standard design conformance checklist:
 
-**Verify the waiver contains all four required elements:**
-- [ ] Reference to `md_docs/planner/active/<FEATURE_NAME>_ARCHITECTURE.md`
-- [ ] Scope classification: `UI_NOT_REQUIRED`
-- [ ] Evidence: specific statement of why no UI surface is affected
-- [ ] Explicit waiver statement: "No UI/UX design specification is required for this feature. All design conformance checklist items are waived."
+**Verify the waiver contains all four required elements** as defined in the Non-UI Waiver Schema in `SKILL.md` (elements a through d). Apply the exact content requirements from that schema — do not evaluate elements against a looser standard than what the schema specifies.
 
 **If any required element is missing:** Record a Class B defect — Specification Ambiguity (Orchestrator-authored waiver is incomplete). Route to Orchestrator for correction before proceeding.
 
@@ -153,12 +199,16 @@ Work through every applicable section systematically. Do not skip sections. For 
 - [ ] The Developer Completion Report lists all created and modified files. Cross-reference against the actual files present on disk — the report must be accurate.
 - [ ] All deviations from the specification listed in the report have been reviewed and are justified. A deviation without justification is a Class A defect regardless of the deviation's apparent reasonableness.
 - [ ] Any specification conflicts the Developer documented have been noted for potential Planner or Designer follow-up.
+- [ ] All entries in the `Specification Gaps Logged` section of the Completion Report use exactly the five standardized snake_case keys: `gap_document`, `specification_gap_description`, `chosen_interpretation`, `rejected_alternatives`, and `risk_assessment`. Any entry that uses an alias, abbreviation, alternate capitalization, or any other non-standard key name is a Minor — Code Quality defect. Record the specific non-standard key found and the correct key it must be replaced with.
+- [ ] Each gap entry's `gap_document` value resolves to an actual specification file present in `md_docs/*/active/`. A `gap_document` value that references a non-existent file is a Minor — Code Quality defect separate from any Class A/B classification of the gap's substance.
 
 ---
 
 # Review Decision
 
 After completing the inspection checklist, produce a formal Review Decision. Write the decision to `md_docs/reviewer/active/<FEATURE_NAME>_REVIEW_CYCLE_N.md`, where N starts at 1 and increments with each review cycle.
+
+The `decision_code` field is the machine-read field. The Orchestrator and session-recovery read `decision_code` exclusively to determine pipeline routing — they do not parse `decision_detail` prose for routing decisions. Both sub-fields must be written in every Review Decision document. Omitting either sub-field is a documentation error that will cause session-recovery to classify the Review Decision as incomplete.
 
 ## If All Applicable Checklist Items Pass — Approved
 
@@ -187,7 +237,10 @@ Non-UI Waiver (if applicable)
 Defects Found  : 0
 Open Defects   : 0
 
-Decision       : Approved — implementation cleared for Builder
+Decision
+--------
+decision_code  : APPROVED
+decision_detail: Approved — implementation cleared for Builder
 ```
 
 ## If Any Applicable Checklist Item Fails — Rejected
@@ -228,7 +281,11 @@ Class B (Specification Ambiguity): [X]
 Class C (Systemic Pattern)       : [X]
 
 Blocker Count : [X]
-Decision      : Rejected
+
+Decision
+--------
+decision_code  : REJECTED
+decision_detail: Rejected — [one-sentence summary of the primary defect category and required remediation action]
 
 Routing Instructions
 --------------------
@@ -256,8 +313,11 @@ Maintain a count of review cycles for this feature. At the start of each cycle, 
 - Do not modify, rewrite, or fix any implementation file. Your role is inspection and classification only. A single edit to an implementation file means the Builder is building code that was not submitted for review.
 - Do not approve an implementation that has any Blocker or Major defect outstanding, regardless of how complete the rest of the implementation appears. Partial approval does not exist.
 - Do not classify a defect as Class B — Specification Ambiguity if the specification is clear and the implementation simply does not follow it. Misreading a clear specification is a Developer error, not an ambiguity.
+- Do not classify a gap entry as Class B solely because a `Specification Gaps Logged` entry exists. Evaluate the `chosen_interpretation` field's reasonableness independently. A documented but indefensible interpretation is still a Class A defect.
 - Do not route Class C — Systemic Pattern defects back to Developer. Always halt and escalate to the Orchestrator.
 - Do not begin inspection without both specification documents and the Developer Completion Report present and read.
 - Do not approve an implementation to proceed to Builder unless every applicable checklist item passes. "Mostly passing" is not passing.
+- Do not write a Review Decision document that omits either `decision_code` or `decision_detail`. Both sub-fields are required. `decision_code` must be exactly `APPROVED` or `REJECTED` in uppercase — no other value is valid.
+- Do not read `decision_detail` prose for machine-routing purposes. The Orchestrator and session-recovery route based on `decision_code` only.
 - Use feature-prefixed review filenames: `<FEATURE_NAME>_REVIEW_CYCLE_N.md`. Increment N per cycle.
 - Read specification contracts only from `md_docs/*/active/`. Never read from `md_docs/*/archive/`.
