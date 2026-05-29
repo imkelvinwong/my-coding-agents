@@ -96,6 +96,7 @@ Read every file found in Step 1. For each file, record its path, the agent that 
 |---|---|---|
 | Planner | `<FEATURE_NAME>_ARCHITECTURE.md` | All 11 section headers present; Section 10 contains a fenced `json` code block that parses successfully into an object with all four required keys: `feature_name` (string), `total_story_points` (integer), `phase_breakdown` (array), and `execution_recommendation` (one of the three permitted string literals). The prose Orchestrator Scheduling Note line is present for human readability but is not evaluated for completeness — the JSON block is the authoritative completeness signal. |
 | Designer | `<FEATURE_NAME>_DESIGN.md` | Either: all 10 section headers present (full specification), OR: the document header contains "No UI/UX design specification is required for this feature" and all four waiver elements defined in the Non-UI Waiver Schema in `SKILL.md` are present and non-empty |
+| Researcher | `<FEATURE_NAME>_TECHNICAL_VERIFICATION_REPORT.md` | All five section headers present: "Section 1 — Validation Summary", "Section 2 — Mathematical Proofs", "Section 3 — AI Core Modules", "Section 4 — Pydantic v2 I/O Schemas", and "Section 5 — Developer Integration Notes"; "Ready for Developer" field present and reads "Yes". If the file is absent and the architecture document contains no ML components (no model files in Section 3, no ML framework in Section 9), classify as complete (skipped — no ML components). |
 | Developer | `<FEATURE_NAME>_DEVELOPER_COMPLETION.md` | "Files Created", "Files Modified", "Self-Review Checklist", and "Ready for Reviewer" fields all present; "Ready for Reviewer" reads "Yes" |
 | Reviewer | `<FEATURE_NAME>_REVIEW_CYCLE_N.md` (highest N) | `decision_code` field present and reads exactly `APPROVED` or `REJECTED` (uppercase, exact string match — do not evaluate surrounding prose as a substitute for this field) |
 | Builder | `<FEATURE_NAME>_BUILDER_COMPLETION.md` | "Build Status", "Dev Server" (Status and Port fields), "Smoke Test Results", and "Ready for Tester" fields all present; "Ready for Tester" reads "Yes" or "No" with a reason |
@@ -135,6 +136,7 @@ Using the Artifact Inventory, determine the last fully completed pipeline phase.
 | Planner | `md_docs/planner/active/<FEATURE_NAME>_ARCHITECTURE.md` is classified as complete per Step 3 criteria |
 | UI Scope Gate | Architecture document is complete AND contains a recoverable `UI_REQUIRED` or `UI_NOT_REQUIRED` classification (in the document body or derivable from its content per Step 5) |
 | Designer | `md_docs/designer/active/<FEATURE_NAME>_DESIGN.md` is classified as complete or complete (waiver) per Step 3 criteria |
+| Researcher | `md_docs/researcher/active/<FEATURE_NAME>_TECHNICAL_VERIFICATION_REPORT.md` is classified as complete per Step 3 criteria, OR classified as complete (skipped — no ML components) |
 | Developer | `md_docs/developer/active/<FEATURE_NAME>_DEVELOPER_COMPLETION.md` is complete with "Ready for Reviewer: Yes" |
 | Reviewer | The highest-numbered `md_docs/reviewer/active/<FEATURE_NAME>_REVIEW_CYCLE_N.md` is complete and its `decision_code` reads exactly: `APPROVED` (uppercase, exact string match — do not read surrounding prose for this determination) |
 | Builder | `md_docs/builder/active/<FEATURE_NAME>_BUILDER_COMPLETION.md` is complete and its "Ready for Tester" field reads "Yes" |
@@ -179,6 +181,10 @@ Apply these staleness rules in order. Always apply the earliest (most upstream) 
 - **If the architecture document has a more recent modification timestamp than the design document:** The design document was produced before the most recent architecture change and may no longer reflect the current architecture. Set the re-entry point to Designer at minimum. Archive the stale design document before resuming.
 
 - **If the design document has a more recent modification timestamp than the Developer Completion Report:** The Completion Report was produced before the most recent design change and may no longer reflect current specifications. Set the re-entry point to Developer at minimum. Archive the stale Completion Report.
+
+- **If the design document has a more recent modification timestamp than the Technical Verification Report:** The Researcher report was produced before the most recent design change and may no longer reflect current async data state contracts or UI latency constraints. Set the re-entry point to Researcher at minimum. Archive the stale Technical Verification Report before resuming.
+
+- **If the Technical Verification Report has a more recent modification timestamp than the Developer Completion Report:** The Developer Completion Report was produced before the most recent Researcher output and the ML module signatures or Pydantic v2 schemas the Developer integrated against may have since changed. Set the re-entry point to Developer at minimum. Archive the stale Developer Completion Report.
 
 - **If the Developer Completion Report has a more recent modification timestamp than the most recent Reviewer cycle file:** The Reviewer cycle was produced before the most recent Developer submission and may be evaluating an outdated version of the implementation. Set the re-entry point to Reviewer at minimum. Archive the stale Reviewer cycle file.
 

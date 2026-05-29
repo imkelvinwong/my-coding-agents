@@ -38,6 +38,10 @@ md_docs/
         active/
             <FEATURE_NAME>_DESIGN.md          ← full specification or Non-UI Waiver
         archive/
+    researcher/
+        active/
+            <FEATURE_NAME>_TECHNICAL_VERIFICATION_REPORT.md
+        archive/
     developer/
         active/
             <FEATURE_NAME>_DEVELOPER_COMPLETION.md
@@ -72,6 +76,8 @@ md_docs/
 
 **Note on the tester staging directory:** The `staging/` directory is used exclusively during Fan-Out test generation. It is not present or required during sequential test generation runs. The four staging files are ephemeral — they are produced by Fan-Out agents A and B, consumed by the Tester's consolidation step, and archived by the Orchestrator at pipeline completion or halt. No agent other than the Tester may read from `md_docs/tester/staging/`. Session-recovery never reads staging files as valid contract artifacts — their presence indicates an incomplete Fan-Out, which session-recovery treats as a Tester-phase failure requiring re-run from the beginning of the Tester phase.
 
+**Note on the researcher directory:** The `<FEATURE_NAME>_TECHNICAL_VERIFICATION_REPORT.md` file is always written by the Researcher agent. It is never written by the Orchestrator or any other agent. The Reviewer reads it to verify ML module conformance. Session-recovery uses the "Ready for Developer" field to determine whether the Researcher phase completed.
+
 ---
 
 ## Agent Output Path Reference
@@ -83,6 +89,7 @@ Use this table to resolve the output path for each agent's deliverable. Agents m
 | Planner | Architecture document | `md_docs/planner/active/<FEATURE_NAME>_ARCHITECTURE.md` |
 | Designer | Design specification or Non-UI Waiver | `md_docs/designer/active/<FEATURE_NAME>_DESIGN.md` |
 | Orchestrator | Non-UI Waiver (when UI_NOT_REQUIRED) | `md_docs/designer/active/<FEATURE_NAME>_DESIGN.md` |
+| Researcher | Technical Verification Report | `md_docs/researcher/active/<FEATURE_NAME>_TECHNICAL_VERIFICATION_REPORT.md` |
 | Developer | Developer Completion Report | `md_docs/developer/active/<FEATURE_NAME>_DEVELOPER_COMPLETION.md` |
 | Reviewer | Review Decision (per cycle) | `md_docs/reviewer/active/<FEATURE_NAME>_REVIEW_CYCLE_N.md` |
 | Builder | Builder Completion Report | `md_docs/builder/active/<FEATURE_NAME>_BUILDER_COMPLETION.md` |
