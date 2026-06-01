@@ -58,11 +58,14 @@ md_docs/
         active/
             <FEATURE_NAME>_TEST_PLAN.md
             <FEATURE_NAME>_TEST_COMPLETION.md
+            <FEATURE_NAME>_LLM_EVAL_RESULTS.md          ← LLM eval run results (if LLM components present)
         staging/
             <FEATURE_NAME>_SPEC_INDEPENDENT_START.md   ← heartbeat signal, Agent A
             <FEATURE_NAME>_UI_DEPENDENT_START.md        ← heartbeat signal, Agent B
+            <FEATURE_NAME>_LLM_EVAL_START.md            ← heartbeat signal, Agent C
             <FEATURE_NAME>_SPEC_INDEPENDENT_TESTS.md    ← Fan-Out test output, Agent A
             <FEATURE_NAME>_UI_DEPENDENT_TESTS.md        ← Fan-Out test output, Agent B
+            <FEATURE_NAME>_LLM_EVAL_TESTS.md            ← Fan-Out test output, Agent C
         archive/
     orchestrator/
         active/
@@ -74,7 +77,7 @@ md_docs/
 
 **Note on the reviewer directory:** Review cycle files include a numeric suffix: `<FEATURE_NAME>_REVIEW_CYCLE_1.md`, `<FEATURE_NAME>_REVIEW_CYCLE_2.md`, etc. Always use the highest N present as the current decision. Prior cycle files remain in `active/` until the pipeline completes or halts — they are historical context, not stale contracts.
 
-**Note on the tester staging directory:** The `staging/` directory is used exclusively during Fan-Out test generation. It is not present or required during sequential test generation runs. The four staging files are ephemeral — they are produced by Fan-Out agents A and B, consumed by the Tester's consolidation step, and archived by the Orchestrator at pipeline completion or halt. No agent other than the Tester may read from `md_docs/tester/staging/`. Session-recovery never reads staging files as valid contract artifacts — their presence indicates an incomplete Fan-Out, which session-recovery treats as a Tester-phase failure requiring re-run from the beginning of the Tester phase.
+**Note on the tester staging directory:** The `staging/` directory is used exclusively during Fan-Out test generation. It is not present or required during sequential test generation runs. The six staging files are ephemeral — they are produced by Fan-Out agents A, B, and C (Agent C only when the feature contains LLM inference components), consumed by the Tester's consolidation step, and archived by the Orchestrator at pipeline completion or halt. No agent other than the Tester may read from `md_docs/tester/staging/`. Session-recovery never reads staging files as valid contract artifacts — their presence indicates an incomplete Fan-Out, which session-recovery treats as a Tester-phase failure requiring re-run from the beginning of the Tester phase.
 
 **Note on the researcher directory:** The `<FEATURE_NAME>_TECHNICAL_VERIFICATION_REPORT.md` file is always written by the Researcher agent. It is never written by the Orchestrator or any other agent. The Reviewer reads it to verify ML module conformance. Session-recovery uses the "Ready for Developer" field to determine whether the Researcher phase completed.
 
@@ -82,7 +85,7 @@ md_docs/
 
 ## Agent Output Path Reference
 
-Use this table to resolve the output path for each agent's deliverable. Agents must write to exactly these paths. Session-recovery uses exactly these paths to locate artifacts during reconstruction. During Fan-Out execution, Agent A and Agent B must write to exactly their designated staging paths — no other path is permitted during a Fan-Out phase.
+Use this table to resolve the output path for each agent's deliverable. Agents must write to exactly these paths. Session-recovery uses exactly these paths to locate artifacts during reconstruction. During Fan-Out execution, Agent A, Agent B, and Agent C must write to exactly their designated staging paths — no other path is permitted during a Fan-Out phase.
 
 | Agent | Output File | Path |
 |---|---|---|
@@ -99,6 +102,9 @@ Use this table to resolve the output path for each agent's deliverable. Agents m
 | Tester (Fan-Out heartbeat — Agent B) | UI-Dependent Start Signal | `md_docs/tester/staging/<FEATURE_NAME>_UI_DEPENDENT_START.md` |
 | Tester (Fan-Out staging — Agent A) | Spec-Independent Tests | `md_docs/tester/staging/<FEATURE_NAME>_SPEC_INDEPENDENT_TESTS.md` |
 | Tester (Fan-Out staging — Agent B) | UI-Dependent Tests | `md_docs/tester/staging/<FEATURE_NAME>_UI_DEPENDENT_TESTS.md` |
+| Tester (Fan-Out heartbeat — Agent C) | LLM Eval Start Signal | `md_docs/tester/staging/<FEATURE_NAME>_LLM_EVAL_START.md` |
+| Tester (Fan-Out staging — Agent C) | LLM Eval Tests | `md_docs/tester/staging/<FEATURE_NAME>_LLM_EVAL_TESTS.md` |
+| Tester | LLM Eval Results | `md_docs/tester/active/<FEATURE_NAME>_LLM_EVAL_RESULTS.md` |
 | Orchestrator | Pipeline Execution Report | `md_docs/orchestrator/active/<FEATURE_NAME>_PIPELINE_EXECUTION_REPORT.md` |
 
 ---
@@ -130,7 +136,7 @@ All four elements must be present and non-empty. Do not infer or approximate a m
 
 5. **Legacy paths are not valid.** The paths `.architecture/` and `.design/` are superseded by `md_docs/planner/active/` and `md_docs/designer/active/` respectively. Any file found at a legacy path during recovery should be treated as an orphan — do not read it as a valid contract.
 
-6. **Staging files are ephemeral and are not contract artifacts.** Files in `md_docs/tester/staging/` are produced during Fan-Out test generation and consumed by the Tester's consolidation step. They do not represent a committed pipeline contract at any point in their lifecycle. No agent other than the Tester — and no session-recovery procedure — may read from `md_docs/tester/staging/` for contract or routing purposes. The Orchestrator archives staging files along with all other feature artifacts at pipeline completion or halt, using the same timestamp-append operation defined in the Archive Feature Files section below and applying the same batch timestamp used for all other artifacts in that archive operation. Staging files are never treated as resumable state by session-recovery — their presence in `staging/` indicates that a Fan-Out was initiated but not consolidated, which session-recovery classifies as a Tester-phase failure and resolves by setting the re-entry point to Tester for a full re-run.
+6. **Discard-on-abort is total, not selective.** When a Fan-Out abort is triggered — by a heartbeat timeout, a concurrency control violation, an Orchestrator signal, or any other cause — all staging file content written thus far must be discarded entirely. The Tester must not attempt to use, merge, or resume from partial staging output. A partially-written `SPEC_INDEPENDENT_TESTS.md` combined with a complete `UI_DEPENDENT_TESTS.md` or `LLM_EVAL_TESTS.md` produces an asymmetric test suite that will pass coverage metrics on only a portion of the intended test targets. This applies equally when Agent C was not spawned — a partial `SPEC_INDEPENDENT_TESTS.md` and a complete `UI_DEPENDENT_TESTS.md` is still an invalid asymmetric suite. After a discard, the `staging/` directory contents — including any `LLM_EVAL_START.md`, `LLM_EVAL_TESTS.md`, and any other partially-written Agent C files — are left for the Orchestrator to archive. The Tester proceeds to sequential test generation from Step 2 of its workflow without reading any staging content.
 
 ---
 

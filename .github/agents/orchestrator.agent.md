@@ -122,6 +122,7 @@ Poll `md_docs/tester/staging/` every 2 seconds after spawning Fan-Out agents.
 Expected heartbeat signal files:
 - `<FEATURE_NAME>_SPEC_INDEPENDENT_START.md` (Agent A — always required)
 - `<FEATURE_NAME>_UI_DEPENDENT_START.md` (Agent B — required only if Agent B was spawned; skip this check if the design document is a Non-UI Waiver)
+- `<FEATURE_NAME>_LLM_EVAL_START.md` (Agent C — required only if Agent C was spawned; skip this check if the feature contains no LLM inference components)
 
 At the 10-second mark, apply the following decision:
 - **If all expected start signals are present:** All spawned agents have confirmed initialization. Advance to Phase 2.
@@ -133,19 +134,26 @@ Poll `md_docs/tester/staging/` every 30 seconds after Phase 1 passes.
 Expected staging output files:
 - `<FEATURE_NAME>_SPEC_INDEPENDENT_TESTS.md` (Agent A)
 - `<FEATURE_NAME>_UI_DEPENDENT_TESTS.md` (Agent B — required only if Agent B was spawned)
+- `<FEATURE_NAME>_LLM_EVAL_TESTS.md` (Agent C — required only if Agent C was spawned; skip this check if the feature contains no LLM inference components)
 
 At the 5-minute mark from Phase 2 start, apply the following decision:
 - **If all expected output files are present:** Proceed to Phase 3 consolidation.
 - **If any expected output file is absent at the 5-minute mark:** Execute an abort. Terminate all spawned agents. Log the UTC timestamp, feature name, and exact filename of the missing output file. Discard all staging file content written thus far — do not attempt to use partial staging output. A partial test file produces an incomplete suite that will pass coverage metrics incorrectly. Fall back to sequential test generation.
 
 **Phase 3 — Consolidation:**
-Read both staging output files. Validate that each file contains at minimum the test categories it was assigned:
+Read all spawned agents' staging output files. Validate that each file contains at minimum the test categories it was assigned:
 - `<FEATURE_NAME>_SPEC_INDEPENDENT_TESTS.md` must contain "Unit Tests" and "Edge Cases" sections, both non-empty.
 - `<FEATURE_NAME>_UI_DEPENDENT_TESTS.md` must contain "Component Tests" and "Accessibility Tests" sections, both non-empty (skip this file's validation if Agent B was not spawned).
+- `<FEATURE_NAME>_LLM_EVAL_TESTS.md` must contain an "LLM Eval Tests" section, non-empty (skip this file's validation if Agent C was not spawned).
 
-If validation passes, merge the staging file contents into the final test files in `md_docs/tester/active/`. Archive the staging files per the standard archive operation defined in `SKILL.md` using the same UTC timestamp batch as all other pipeline artifacts for this feature.
+If staging validation passes, merge the staging file contents into the final test files in `md_docs/tester/active/`. Archive the staging files per the standard archive operation defined in `SKILL.md` using the same UTC timestamp batch as all other pipeline artifacts for this feature.
 
-If validation fails (a required section is absent or empty), treat this as a Phase 2 abort: discard all staging content and fall back to sequential test generation.
+If Agent C was spawned, additionally validate `md_docs/tester/active/<FEATURE_NAME>_LLM_EVAL_RESULTS.md` after the Tester executes the eval suite:
+- The file must exist and be non-empty.
+- The file must contain an `eval_score` field (numeric), an `eval_threshold` field (numeric), and an `eval_status` field reading exactly `PASS` or `FAIL` (uppercase, exact string match — do not evaluate surrounding prose as a substitute).
+- If `eval_status` reads `FAIL`, do not set "Ready for Tester: Yes" on the overall pipeline — record the eval failure in the Pipeline Execution Report under a `LLM Eval Gate` field and route back to Developer with the specific score and threshold values.
+
+If staging validation fails (a required section is absent or empty), treat this as a Phase 2 abort: discard all staging content and fall back to sequential test generation.
 
 ---
 

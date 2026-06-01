@@ -90,6 +90,10 @@ Accessibility Tests (skip if Non-UI Waiver)
 Edge Cases and Boundary Conditions
 ------------------------------------
 [scenario name]: [boundary condition and expected behavior — specify the input value and expected output]
+
+LLM Eval Tests (skip if feature contains no LLM inference components)
+---------------------------------------------------------------
+[eval target name]: [model output being evaluated, scoring rubric, threshold value, and pass/fail criteria]
 ```
 
 ---
@@ -108,9 +112,14 @@ Scope is restricted exclusively to test targets derived from the architecture do
 **Agent B — UI-Dependent Tests (skip if Non-UI Waiver):**
 Scope is restricted exclusively to test targets derived from the design document (Sections 4, 7, 8, and 9). Agent B generates: component render tests for all variants and props; interaction tests for all user interaction sequences; async data state tests for all four states (loading, empty, error, success) per data-driven component; and accessibility tests for all ARIA roles, labels, live regions, and keyboard navigation paths. Agent B must not write any unit test, API contract test, or integration test. Agent B writes its output exclusively to `md_docs/tester/staging/<FEATURE_NAME>_UI_DEPENDENT_TESTS.md`.
 
-**If the design document is a Non-UI Waiver:** Agent B's scope is empty. Do not spawn Agent B. Proceed with Agent A only. All test generation falls within Agent A's architecture-derived scope.
+**Agent C — LLM Eval Tests (skip if feature contains no LLM inference components):**
+Scope is restricted exclusively to evaluating LLM inference outputs against quality thresholds derived from the Researcher's Technical Verification Report and the architecture document's Section 4 type contracts. Agent C generates: prompt-response evaluation tests for all LLM inference paths; threshold-gated scoring assertions using `eval_score` against `eval_threshold`; and regression tests for known failure modes documented in Section 5 of the Technical Verification Report. Agent C must not write any unit test, component test, integration test, or accessibility test. Agent C writes its output exclusively to `md_docs/tester/staging/<FEATURE_NAME>_LLM_EVAL_TESTS.md`.
 
-After both agents complete (or Agent A alone completes if Agent B was not spawned), validate the staging files per the Concurrency and Sandbox Controls abort conditions. If validation passes, merge the staging file contents into the final test files in `md_docs/tester/active/`. Then continue at Step 4 — Test Execution. Steps 2 and 3 are not executed in the Fan-Out path because Agent A and Agent B each perform their own framework identification and test generation internally within their scoped responsibility.
+**If the design document is a Non-UI Waiver:** Agent B's scope is empty. Do not spawn Agent B. Proceed with Agent A (and Agent C if applicable) only.
+
+**If the feature contains no LLM inference components:** Agent C's scope is empty. Do not spawn Agent C. Proceed with Agent A and Agent B as applicable.
+
+After all spawned agents complete, validate the staging files per the Concurrency and Sandbox Controls abort conditions. If validation passes, merge the staging file contents into the final test files in `md_docs/tester/active/`. Then continue at Step 4 — Test Execution. Steps 2 and 3 are not executed in the Fan-Out path because Agent A, Agent B, and Agent C each perform their own framework identification and test generation internally within their scoped responsibility.
 
 ---
 
@@ -118,7 +127,7 @@ After both agents complete (or Agent A alone completes if Agent B was not spawne
 
 These controls are mandatory during any Fan-Out phase. A violation of any control is grounds for immediate Fan-Out abort and fallback to sequential execution through Steps 2, 3, 4, 5, and 6. Do not attempt to recover a partially-completed Fan-Out — abort cleanly, discard all staging output, and restart from sequential execution.
 
-**Control 1 — Isolated Execution Threads:** Each spawned agent (Agent A, Agent B) must operate within its own isolated execution thread. No shared memory, no shared file handles, and no shared environment context between threads. An agent must not read the other agent's output file, intermediate state, or in-progress content at any point during execution.
+**Control 1 — Isolated Execution Threads:** Each spawned agent (Agent A, Agent B, Agent C) must operate within its own isolated execution thread. No shared memory, no shared file handles, and no shared environment context between threads. An agent must not read any other agent's output file, intermediate state, or in-progress content at any point during execution.
 
 **Control 2 — Read-Only Repository Access:** Both agents possess read-only access to the master repository — all source files and all specification documents in `md_docs/*/active/`. Neither agent may write to, modify, or delete any source file or specification document during Fan-Out execution. Write access is restricted exclusively to each agent's designated output path in `md_docs/tester/staging/`. Attempting to write to any path outside the designated output path is a control violation and triggers an immediate abort.
 
@@ -156,9 +165,20 @@ Contents (all three fields required):
   status      : initializing
 ```
 
+**Agent C Responsibility (if spawned):** Within 10 seconds of activation, Agent C must write the following initialization signal file to `md_docs/tester/staging/`:
+
+```
+Filename : <FEATURE_NAME>_LLM_EVAL_START.md
+
+Contents (all three fields required):
+  agent       : C
+  activated_at: [UTC timestamp in YYYYMMDDHHMMSS format]
+  status      : initializing
+```
+
 **Self-Termination on Failure:** If an agent cannot write its start signal file within 10 seconds of activation — due to a filesystem error, a permission error, a token limit, an API error, or any other cause — it must self-terminate immediately and report the specific failure cause to the Tester. The agent must not continue test generation after failing to write its start signal. An agent that proceeds without writing its start signal deprives the Orchestrator of the heartbeat data needed to distinguish a live agent from a crashed one.
 
-**Orchestrator Polling:** After spawning both agents, the Orchestrator polls `md_docs/tester/staging/` at 2-second intervals during the 10-second heartbeat window. If all expected start signal files are present before the 10-second mark, the Orchestrator advances to its staging output polling phase. If any expected start signal file is absent at the 10-second mark, the Orchestrator immediately aborts all spawned agents, logs the UTC timestamp and the name of the missing signal file, and signals the Tester to fall back to sequential execution. The Tester must not retry Fan-Out mode in the same pipeline run after a heartbeat abort.
+**Orchestrator Polling:** After spawning all expected agents, the Orchestrator polls `md_docs/tester/staging/` at 2-second intervals during the 10-second heartbeat window. If all expected start signal files are present before the 10-second mark, the Orchestrator advances to its staging output polling phase. If any expected start signal file is absent at the 10-second mark, the Orchestrator immediately aborts all spawned agents, logs the UTC timestamp and the name of the missing signal file, and signals the Tester to fall back to sequential execution. The Tester must not retry Fan-Out mode in the same pipeline run after a heartbeat abort.
 
 ---
 
@@ -364,6 +384,12 @@ Coverage Exclusions
 -------------------
 [File path and function name, line range] — [Justification: why this path is architecturally unreachable]
 [or: None]
+
+LLM Eval Results (omit section if feature contains no LLM inference components)
+---------------------------------------------------------------------------------
+eval_score    : [numeric score produced by Agent C's evaluation suite]
+eval_threshold: [minimum passing score defined in the architecture document or Researcher report]
+eval_status   : [PASS — score meets or exceeds threshold / FAIL — score below threshold]
 
 Pipeline Status
 ---------------
