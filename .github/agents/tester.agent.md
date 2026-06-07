@@ -165,20 +165,21 @@ Contents (all three fields required):
   status      : initializing
 ```
 
-**Agent C Responsibility (if spawned):** Within 10 seconds of activation, Agent C must write the following initialization signal file to `md_docs/tester/staging/`:
+**Agent C Responsibility (if spawned):** Within the `agent_c_window_seconds` value communicated by the Orchestrator at Agent C invocation (derived from `max_inference_latency_ms` in Section 8 of the architecture document per the formula `max(10, ceil(max_inference_latency_ms / 1000) × 3)`; default 90 seconds if `max_inference_latency_ms` is absent from Section 8), Agent C must write the following initialization signal file to `md_docs/tester/staging/`:
 
 ```
 Filename : <FEATURE_NAME>_LLM_EVAL_START.md
 
-Contents (all three fields required):
-  agent       : C
-  activated_at: [UTC timestamp in YYYYMMDDHHMMSS format]
-  status      : initializing
+Contents (all four fields required):
+  agent                : C
+  activated_at         : [UTC timestamp in YYYYMMDDHHMMSS format]
+  status               : initializing
+  heartbeat_window_sec : [the agent_c_window_seconds value communicated at invocation]
 ```
 
-**Self-Termination on Failure:** If an agent cannot write its start signal file within 10 seconds of activation — due to a filesystem error, a permission error, a token limit, an API error, or any other cause — it must self-terminate immediately and report the specific failure cause to the Tester. The agent must not continue test generation after failing to write its start signal. An agent that proceeds without writing its start signal deprives the Orchestrator of the heartbeat data needed to distinguish a live agent from a crashed one.
+**Self-Termination on Failure:** If an agent cannot write its start signal file within its designated window — Agent A and Agent B within 10 seconds, Agent C within `agent_c_window_seconds` — due to a filesystem error, a permission error, a token limit, an API error, or any other cause, it must self-terminate immediately and report the specific failure cause to the Tester. The agent must not continue test generation after failing to write its start signal. An agent that proceeds without writing its start signal deprives the Orchestrator of the heartbeat data needed to distinguish a live agent from a crashed one.
 
-**Orchestrator Polling:** After spawning all expected agents, the Orchestrator polls `md_docs/tester/staging/` at 2-second intervals during the 10-second heartbeat window. If all expected start signal files are present before the 10-second mark, the Orchestrator advances to its staging output polling phase. If any expected start signal file is absent at the 10-second mark, the Orchestrator immediately aborts all spawned agents, logs the UTC timestamp and the name of the missing signal file, and signals the Tester to fall back to sequential execution. The Tester must not retry Fan-Out mode in the same pipeline run after a heartbeat abort.
+**Orchestrator Polling:** After spawning all expected agents, the Orchestrator polls `md_docs/tester/staging/` at 2-second intervals. Agent A and Agent B are evaluated against a fixed 10-second window. Agent C is evaluated against `agent_c_window_seconds` (derived from `max_inference_latency_ms` in Section 8 of the architecture document; default 90 seconds if absent). If all expected start signal files are present before their respective windows expire, the Orchestrator advances to its staging output polling phase. If any expected start signal file is absent at its agent-specific window boundary, the Orchestrator immediately aborts all spawned agents, logs the UTC timestamp, the name of the missing signal file, and the window value that was applied, and signals the Tester to fall back to sequential execution. The Tester must not retry Fan-Out mode in the same pipeline run after a heartbeat abort.
 
 ---
 

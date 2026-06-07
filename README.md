@@ -81,7 +81,7 @@ Feature Request
       │               • Agent A: Spec-Independent tests (always)
       │               • Agent B: UI-Dependent tests (skipped if Non-UI Waiver)
       │               • Agent C: LLM Eval tests (skipped if no LLM inference components)
-      │               • Heartbeat Monitor: 10-second start-signal window per agent
+      │               • Heartbeat Monitor: 10-second window (Agents A & B); dynamic window (Agent C)
       │               • Orchestrator polls staging/ at Phase 1 and Phase 2 windows
       │               • 100% pass rate + coverage thresholds + eval_status: PASS required
       ▼
@@ -146,7 +146,7 @@ When a derived test plan contains 12 or more distinct test targets, the Tester a
 * **Agent B** generates UI-Dependent tests (component, interaction, accessibility) — skipped if the design document is a Non-UI Waiver.
 * **Agent C** generates LLM Eval tests (prompt-response scoring, threshold-gated assertions, regression tests for known failure modes) — skipped if the feature contains no LLM inference components.
 
-A 10-second Heartbeat Monitor safety protocol validates initialization of every spawned agent before output polling begins; any missing start signal triggers an immediate abort and fallback to sequential execution.
+A Heartbeat Monitor safety protocol validates initialization of every spawned agent before output polling begins; any missing start signal triggers an immediate abort and fallback to sequential execution. Agent A and Agent B are evaluated against a fixed 10-second window. Agent C is evaluated against a dynamic window derived from `max_inference_latency_ms` in architecture Section 8 using the formula `max(10, ceil(max_inference_latency_ms / 1000) × 3)` — defaulting to 90 seconds if the field is absent. This prevents false aborts on inference-heavy evaluation suites where a single eval case may take 30–120 seconds.
 
 ### Defect Classification & Specification Gaps
 
@@ -225,7 +225,7 @@ Files analyzed in pipeline execution order:
 | File | Description |
 | --- | --- |
 | `orchestrator.agent.md` | Pipeline controller — planning, validation, routing, archiving, Fan-Out polling (Agents A, B, C), LLM eval gate |
-| `planner.agent.md` | Architecture specification producer — 11-section output with fenced-JSON scheduling payload |
+| `planner.agent.md` | Architecture specification producer — 11-section output with fenced-JSON scheduling payload; Section 8 requires `max_inference_latency_ms` for any feature with ML framework dependencies |
 | `designer.agent.md` | Design specification producer — 10-section output + Section 8.1 streaming states, or Non-UI Waiver |
 | `researcher.agent.md` | ML verification firewall — tensor validation, mathematical proofs, PyTorch/TensorFlow core modules, Pydantic v2 I/O schemas, `Ready for Developer` gate |
 | `developer.agent.md` | Implementation producer — source code, Completion Report, Specification Gap Protocol |

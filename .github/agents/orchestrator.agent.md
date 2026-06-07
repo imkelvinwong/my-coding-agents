@@ -116,17 +116,24 @@ Use these entry points when the request is scoped to a specific phase rather tha
 
 When the Tester activates Fan-Out mode (12 or more test targets), the Orchestrator is responsible for monitoring the parallel agents via the following polling sequence. Execute all three phases in order. Do not skip Phase 1 or abbreviate the polling intervals.
 
-**Phase 1 — Heartbeat Window (0–10 seconds):**
+**Phase 1 — Heartbeat Window:**
 Poll `md_docs/tester/staging/` every 2 seconds after spawning Fan-Out agents.
 
-Expected heartbeat signal files:
-- `<FEATURE_NAME>_SPEC_INDEPENDENT_START.md` (Agent A — always required)
-- `<FEATURE_NAME>_UI_DEPENDENT_START.md` (Agent B — required only if Agent B was spawned; skip this check if the design document is a Non-UI Waiver)
-- `<FEATURE_NAME>_LLM_EVAL_START.md` (Agent C — required only if Agent C was spawned; skip this check if the feature contains no LLM inference components)
+Before polling begins, compute the heartbeat window for each spawned agent:
 
-At the 10-second mark, apply the following decision:
-- **If all expected start signals are present:** All spawned agents have confirmed initialization. Advance to Phase 2.
-- **If any expected start signal is absent at the 10-second mark:** Execute an immediate abort. Terminate all spawned agents without waiting for Phase 2's timeout. Log the following before taking any further action: the UTC timestamp of the abort decision, the feature name, and the exact filename of the missing signal file. After logging, fall back to sequential test generation (Steps 2–4 of `tester.agent.md`). Do not retry Fan-Out mode in the same pipeline run.
+- **Agent A and Agent B window:** Always 10 seconds. Web processes initialize within milliseconds; 10 seconds is a generous ceiling.
+- **Agent C window (if spawned):** Read `max_inference_latency_ms` from Section 8 (Cross-Cutting Concerns) of `md_docs/planner/active/<FEATURE_NAME>_ARCHITECTURE.md`. Compute: `agent_c_window_seconds = max(10, ceil(max_inference_latency_ms / 1000) × 3)`. If `max_inference_latency_ms` is absent from Section 8, apply a default of 90 seconds and record the fallback in the Pipeline Execution Report under Fan-Out Status. The Agent C window is computed once before polling begins and does not change mid-poll. Communicate `agent_c_window_seconds` to Agent C at invocation — Agent C records it in its start signal file.
+
+Expected heartbeat signal files and their per-agent window boundaries:
+- `<FEATURE_NAME>_SPEC_INDEPENDENT_START.md` (Agent A — always required; must appear within 10 seconds)
+- `<FEATURE_NAME>_UI_DEPENDENT_START.md` (Agent B — required only if Agent B was spawned; must appear within 10 seconds; skip this check if the design document is a Non-UI Waiver)
+- `<FEATURE_NAME>_LLM_EVAL_START.md` (Agent C — required only if Agent C was spawned; must appear within `agent_c_window_seconds`; skip this check if the feature contains no LLM inference components)
+
+Apply the following decisions independently per agent, at each agent's own window boundary:
+- **If a signal file is present before its window expires:** That agent has confirmed initialization. Continue polling for any remaining agents whose windows have not yet expired.
+- **If all expected signals are present before all windows expire:** All spawned agents have confirmed initialization. Advance to Phase 2.
+- **If Agent A or Agent B signal is absent at the 10-second mark:** Execute an immediate abort. Terminate all spawned agents. Log the UTC timestamp of the abort decision, the feature name, and the exact filename of the missing signal file. Fall back to sequential test generation (Steps 2–4 of `tester.agent.md`). Do not retry Fan-Out mode in the same pipeline run.
+- **If Agent C signal is absent at the `agent_c_window_seconds` mark:** Execute an immediate abort. Terminate all spawned agents. Log the UTC timestamp of the abort decision, the feature name, the exact filename of the missing signal file (`<FEATURE_NAME>_LLM_EVAL_START.md`), and the `agent_c_window_seconds` value that was applied. Fall back to sequential test generation. Do not retry Fan-Out mode in the same pipeline run.
 
 **Phase 2 — Staging Output Window (10 seconds – 5 minutes from Phase 2 start):**
 Poll `md_docs/tester/staging/` every 30 seconds after Phase 1 passes.
@@ -342,11 +349,12 @@ Evidence       : [specific section and content from architecture document that s
 
 Fan-Out Status (if applicable)
 ------------------------------
-Fan-Out Activated  : [Yes / No — if No, reason: below 12-target threshold / Non-UI Waiver]
-Heartbeat Phase    : [Passed / Aborted — specify missing signal file if aborted]
-Output Phase       : [Passed / Aborted — specify missing output file if aborted]
-Consolidation      : [Complete / Skipped — reason if skipped]
-Fallback Mode      : [Sequential test generation invoked / Not required]
+Fan-Out Activated        : [Yes / No — if No, reason: below 12-target threshold / Non-UI Waiver]
+Agent C Heartbeat Window : [X seconds — derived from max_inference_latency_ms: Y ms in Section 8 / default 90s applied — max_inference_latency_ms absent from Section 8 / N/A — Agent C not spawned]
+Heartbeat Phase          : [Passed / Aborted — specify missing signal file and window value applied if aborted]
+Output Phase             : [Passed / Aborted — specify missing output file if aborted]
+Consolidation            : [Complete / Skipped — reason if skipped]
+Fallback Mode            : [Sequential test generation invoked / Not required]
 
 Escalations
 -----------
