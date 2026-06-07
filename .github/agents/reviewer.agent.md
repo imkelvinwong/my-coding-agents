@@ -184,6 +184,16 @@ Work through every applicable section systematically. Do not skip sections. For 
 - [ ] Keyboard navigation is implemented as specified in Section 9: tab order matches the specification, focus is trapped within modals, and arrow keys navigate lists and menus as specified.
 - [ ] All animations respect `prefers-reduced-motion: reduce` with the fallback behavior specified in Section 9 of the design document.
 
+## ML Module Conformance (Skip if architecture contains no ML components — mark as N/A)
+
+- [ ] Every ML module file listed in Section 3 (File Structure) of the architecture document exists in the implementation and is non-empty. Cross-reference against the Developer Completion Report's "Files Created" section and the Researcher's Technical Verification Report Section 3.
+- [ ] All PyTorch or TensorFlow module class signatures in the implementation match the source code defined in Section 3 of the Technical Verification Report exactly. A module whose constructor parameters or `forward()` / `call()` signature differs from the Researcher's verified version is a Class A defect — the Researcher's output is the contract, not the Developer's interpretation of it.
+- [ ] All Pydantic v2 schema class definitions in the implementation match the schemas defined in Section 4 of the Technical Verification Report exactly. Field names, types, validators, and `Field(...)` constraints must be identical. A schema field that has been widened, renamed, or had its validator removed is a Class A defect.
+- [ ] The Developer has not imported `fastapi`, `starlette`, or any HTTP routing framework from within any file that also imports the Researcher's AI core modules. The division of labor boundary between AI core and application layer must be maintained. A file that crosses this boundary is a Class A defect — role boundary violation.
+- [ ] All device placement in ML module usage is configurable via a parameter — no hardcoded `"cuda"`, `"cpu"`, or `"mps"` strings appear in the Developer's integration code. A hardcoded device string is a Class A defect.
+- [ ] If the Researcher's Section 5 (Developer Integration Notes) lists any "Unresolved Validation Items" with "Developer Blocked: No" and a documented workaround, verify the workaround is implemented as described. A workaround implemented differently than specified is a Class A defect.
+- [ ] If the Researcher's Section 5 lists any "Context7 Unverified Items" requiring a manual verification step, confirm the Developer completed that step and documented it in the Developer Completion Report's "Known Risks" section. An unverified item that has not been acknowledged is a Class B defect — Specification Ambiguity (Researcher output incomplete).
+
 ## Code Quality
 
 - [ ] No `TODO`, `not implemented`, empty function bodies, or placeholder comments remain. These are not minor issues — they indicate incomplete implementation.
@@ -229,6 +239,7 @@ Inspection Summary
 ------------------
 Architecture Conformance : Pass
 Design Conformance       : [Pass / N/A — Non-UI Waiver]
+ML Conformance           : [Pass / N/A — no ML components in architecture]
 Code Quality             : Pass
 Completion Report        : Verified
 
@@ -269,6 +280,7 @@ Severity  : [Blocker / Major / Minor]
             Minor   — code quality violation with no behavioral impact
 Class     : [A — Developer Error / B — Specification Ambiguity / C — Systemic Pattern]
 Spec Ref  : [document name, section number, and specific requirement violated — e.g., "ARCHITECTURE.md Section 4 — UserProfile type missing 'role' field"]
+            [For ML defects, cite the Technical Verification Report section — e.g., "TECHNICAL_VERIFICATION_REPORT.md Section 4 — InferenceRequest schema field 'embedding' type widened from list[float] to Any"]
 Observed  : [what the implementation currently does]
 Expected  : [what the specification requires]
 Routing   : [Developer / Planner / Designer / Orchestrator — Halt and escalate]

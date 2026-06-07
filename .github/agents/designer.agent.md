@@ -211,7 +211,7 @@ For every interactive element in this feature, define the full interaction contr
 
 ## Section 8 — Async Data State Designs
 
-For every component that renders asynchronous data, specify all four states explicitly. A component entry with fewer than four states is an incomplete specification.
+For every component that renders asynchronous data, specify all four states explicitly. A component entry with fewer than four states is an incomplete specification. For every component that renders streaming data, also specify all four streaming states in Section 8.1 — a streaming component without a Section 8.1 entry is treated as an incomplete specification regardless of how complete its Section 8 states are.
 
 ### [ComponentName] — Loading State
 
@@ -235,6 +235,32 @@ For every component that renders asynchronous data, specify all four states expl
 - **Confirmation feedback if required:** Exact toast message text, or describe the inline confirmation treatment. Not all operations require confirmation — only those where the user might otherwise be uncertain the action completed.
 - **Auto-dismiss duration (if applicable):** Specify in milliseconds. Typical range is 3000–5000ms for non-error toasts.
 
+## Section 8.1 — Streaming Data State Designs
+
+For every component that renders streaming data (token-by-token LLM output, server-sent events, or WebSocket-pushed content), specify all four streaming states explicitly. A streaming component entry with fewer than four states is an incomplete specification. Skip this section entirely if the feature contains no streaming data components — write "Not applicable — no streaming data components" and proceed to Section 9.
+
+### [ComponentName] — Connecting State
+
+- **Visual treatment:** Describe the indicator shown while the connection is being established before the first token arrives (e.g., animated ellipsis, pulsing cursor, skeleton placeholder).
+- **Duration expectation:** Specify the typical time range for this state and whether a timeout affordance appears if connection exceeds a threshold.
+
+### [ComponentName] — Streaming State
+
+- **Token rendering:** Describe how tokens appear progressively — character-by-character, word-by-word, or chunk-by-chunk. Specify the streaming cursor style (e.g., blinking block cursor at the insertion point).
+- **Scroll behavior:** Define whether the container auto-scrolls to follow the latest token or stays fixed once the user scrolls up.
+- **Interruption affordance:** Exact label and position of the stop/cancel control. This control must be visible and keyboard-accessible throughout the streaming state.
+
+### [ComponentName] — Interrupted State
+
+- **Visual treatment:** Describe the indicator that the stream ended before completion — this must be visually distinct from the Complete state so the user understands the response is partial.
+- **Message copy:** Exact string acknowledging the interruption (e.g., "Response stopped." or "Stream interrupted.").
+- **Retry affordance:** Exact button label and the action it triggers.
+
+### [ComponentName] — Complete State
+
+- **Cursor dismissal:** Specify how the streaming cursor is removed or faded when the final token arrives.
+- **Confirmation feedback (if required):** Exact toast message text or inline treatment confirming completion. Only required when the user might otherwise be uncertain the stream finished.
+
 ## Section 9 — Accessibility Specifications
 
 Every row in this table is a Developer implementation requirement and a Reviewer inspection checklist item. Do not leave rows empty or vague — a vague requirement cannot be inspected.
@@ -244,11 +270,13 @@ Every row in this table is a Developer implementation requirement and a Reviewer
 | Keyboard navigation | Tab order (list each focusable element in sequence), focus trap behavior in modals (Tab and Shift+Tab must cycle within the modal, Escape dismisses), arrow key navigation in lists and menus (Up/Down move focus, Enter activates) |
 | ARIA roles | Specific roles required per component — list component name and role (e.g., `FilterDropdown: role="listbox"`, `DataGrid: role="grid"`) |
 | ARIA labels | Every icon button, every form field, and every non-descriptive interactive element must have an `aria-label` or `aria-labelledby`. List each one with its exact label string |
-| Live regions | Components that announce dynamic content changes — specify component name, `aria-live` level (polite for non-urgent updates; assertive for errors and critical alerts), and what change triggers the announcement |
+| Live regions | Components that announce dynamic content changes — specify component name, `aria-live` level (polite for non-urgent updates; assertive for errors and critical alerts), what change triggers the announcement, and the update batching strategy for high-frequency updates (e.g., streaming token output) to prevent screen reader flooding |
 | Color contrast | All text and interactive elements must meet WCAG AA: 4.5:1 for normal text, 3:1 for large text (18px+) and UI components. Note any high-risk combinations to verify |
 | Focus indicators | Visible focus ring on all interactive elements with a minimum 2px outline and 2px offset from the element boundary |
 | Reduced motion | List each animation from Section 7 and its `prefers-reduced-motion` fallback behavior |
 | Screen reader | Describe how each async state change is announced — which component, which live region level, and what text is announced |
+| Streaming live regions | For every streaming component in Section 8.1: specify `aria-busy="true"` during active streaming and `aria-busy="false"` on complete or interrupted. Specify the announcement batching strategy — announce after word boundaries or every N tokens rather than on every character to prevent flooding. List the component name and its chosen strategy |
+| Interruption affordance | For every streaming component: the stop/cancel control must remain in the tab order throughout the streaming state. Specify the exact `aria-label` string (e.g., "Stop generating"), its tab-order position relative to the streaming content region, and whether Escape key also activates it |
 
 ## Section 10 — Design System Consistency Checklist
 
@@ -264,6 +292,13 @@ Complete every item before finalizing the document. An unchecked item means the 
 - [ ] All accessibility requirements from Section 9 are complete, specific, and actionable.
 - [ ] Every component listed in the architecture Section 3 (File Structure) has a corresponding entry in Section 4 of this specification.
 - [ ] All animations in Section 7 have a `prefers-reduced-motion` fallback specified.
+- [ ] All data-driven components have all four async states specified in Section 8: loading, empty, error, and success.
+- [ ] All accessibility requirements from Section 9 are complete, specific, and actionable.
+- [ ] Every component listed in the architecture Section 3 (File Structure) has a corresponding entry in Section 4 of this specification.
+- [ ] All animations in Section 7 have a `prefers-reduced-motion` fallback specified.
+- [ ] All streaming data components have all four streaming states specified in Section 8.1: connecting, streaming, interrupted, and complete. (Mark N/A if the feature contains no streaming data components.)
+- [ ] All streaming content regions have an `aria-live` update batching strategy and `aria-busy` state transition specified in Section 9.
+- [ ] All streaming components have an interruption affordance specified with its tab-order position and exact `aria-label` string in Section 9.
 
 ---
 

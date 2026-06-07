@@ -123,6 +123,9 @@ Execute a minimal functional verification to confirm the application is running 
 - [ ] **No JavaScript console errors are present on initial page load for frontend applications.** Evaluate this item using the console output captured during the browser verification step above — do not evaluate it from server-side logs alone. Console errors on page load indicate a runtime error that the build did not catch. These errors will produce test failures and must be resolved before signaling readiness for Tester.
 - [ ] **Database connection is established if applicable.** Verify this in the startup logs — look for confirmation messages like "Database connected" or "Migrations complete." Do not execute queries to verify the connection; that is the Tester's domain.
 - [ ] **All critical environment-dependent services have initialized correctly** per the startup logs. If the application depends on a cache, message queue, or external service, confirm that its initialization message appeared in the logs without an error.
+- [ ] **ML model weights load successfully on startup if the architecture specifies a pre-loaded model.** Look for a model load confirmation message in the startup logs (e.g., "Model loaded", "Weights initialized", "Device: cuda"). A startup that silently skips model loading will pass all other smoke test items and fail on the first inference request. If no pre-loading is specified in Section 9 of the architecture, mark this item "Not applicable."
+- [ ] **ML inference endpoint responds without a tensor shape error on a minimal synthetic request.** If the architecture defines an inference route (e.g., `POST /api/infer`), send a minimal valid request matching the Pydantic v2 Input schema from the Researcher's Technical Verification Report Section 4, and confirm a non-error HTTP response. Do not validate the response content — only confirm the endpoint does not raise a runtime tensor error. If no inference endpoint exists, mark "Not applicable."
+
 
 Do not mark the smoke test as passing if any applicable item fails. Do not signal readiness for Tester if the smoke test has any failing item.
 
@@ -173,6 +176,8 @@ API health endpoint : [Pass / Fail / Not applicable — specify endpoint tested]
 Console errors      : [None / Description of each error found]
 Database connection : [Pass / Fail / Not applicable — specify confirmation seen in logs]
 Critical services   : [Pass / Fail / Not applicable — specify which services and their status]
+ML model load       : [Pass / Fail / Not applicable — specify confirmation message seen in logs, or reason not applicable]
+ML inference endpoint: [Pass / Fail / Not applicable — specify endpoint tested, request shape sent, and HTTP status received]
 
 Ready for Tester: [Yes / No — if No, state the specific failing item and what Developer action is required]
 ```

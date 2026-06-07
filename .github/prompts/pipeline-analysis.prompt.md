@@ -145,13 +145,15 @@ Analyze the following files in the order listed. The order reflects pipeline exe
 
 3. **`designer.agent.md`** — The design specification producer. Evaluate whether every section of the design document is actionable by the Developer, whether the Non-UI Waiver path (halt if the prompt is triggered from a Non-UI Waiver context) is handled, whether the structured handoff notification format is present and specific, and whether the fallback for a missing design system is adequately defined.
 
-4. **`developer.agent.md`** — The implementation producer. Evaluate whether the Non-UI Waiver design document type is fully handled (which checklist items are skipped, how this is noted in the report), whether the output file path for the Completion Report is specified, whether the self-review checklist covers all specification dimensions, and whether the deviation documentation requirement is specific enough to be actionable.
+4. **`researcher.agent.md`** — The ML verification firewall. Evaluate whether the prerequisite check correctly requires both the architecture and design documents, whether the Step 2 validation procedures for tensor shapes, parameter counts, and VRAM are specific enough to produce a deterministic pass/fail result, whether the Pydantic v2 schema design rules are tight enough to prevent loose typing, whether the "Ready for Developer" field wording exactly matches what session-recovery expects as its completeness signal, and whether the rate-limit backoff protocol in Step 2 prevents a single tool failure from blocking the entire verification pass.
 
-5. **`reviewer.agent.md`** — The quality gate. Evaluate whether the Non-UI Waiver checklist path is complete and covers all four required waiver elements, whether the defect classification definitions are tight enough to prevent misclassification, whether the routing instructions correctly separate "Reviewer documents" from "Orchestrator routes", and whether the cycle tracking rules prevent infinite review loops.
+5. **`developer.agent.md`** — The implementation producer. Evaluate whether the Non-UI Waiver design document type is fully handled (which checklist items are skipped, how this is noted in the report), whether the output file path for the Completion Report is specified, whether the self-review checklist covers all specification dimensions, and whether the deviation documentation requirement is specific enough to be actionable.
 
-6. **`builder.agent.md`** — The compilation and smoke test executor. Evaluate whether the output file path for the Completion Report is specified, whether the expected port determination rule covers all cases (config file, .env, architecture document, framework default), whether the error classification table covers all common build error types, and whether the smoke test checklist covers both frontend and backend-only application types.
+6. **`reviewer.agent.md`** — The quality gate. Evaluate whether the Non-UI Waiver checklist path is complete and covers all four required waiver elements, whether the defect classification definitions are tight enough to prevent misclassification, whether the routing instructions correctly separate "Reviewer documents" from "Orchestrator routes", and whether the cycle tracking rules prevent infinite review loops.
 
-7. **`tester.agent.md`** — The test suite producer and executor. Evaluate whether the Non-UI Waiver path correctly skips all UI-dependent test categories (component, accessibility, interaction), whether both output file paths are specified, whether the Pipeline Status field wording exactly matches what session-recovery expects as a string, and whether the coverage exclusion documentation requirement prevents gaming the thresholds.
+7. **`builder.agent.md`** — The compilation and smoke test executor. Evaluate whether the output file path for the Completion Report is specified, whether the expected port determination rule covers all cases (config file, .env, architecture document, framework default), whether the error classification table covers all common build error types, and whether the smoke test checklist covers both frontend and backend-only application types.
+
+8. **`tester.agent.md`** — The test suite producer and executor. Evaluate whether the Non-UI Waiver path correctly skips all UI-dependent test categories (component, accessibility, interaction), whether both output file paths are specified, whether the Pipeline Status field wording exactly matches what session-recovery expects as a string, and whether the coverage exclusion documentation requirement prevents gaming the thresholds.
 
 ### Skill Files
 
@@ -188,6 +190,9 @@ Evaluate these handoffs at minimum:
 - Planner → Orchestrator (UI Scope Gate read)
 - Orchestrator → Designer (Non-UI Waiver authoring)
 - Designer → Orchestrator (handoff notification)
+- Designer → Researcher (design document type and async state contracts)
+- Researcher → Orchestrator (RESEARCHER HANDOFF notification and "Ready for Developer" field)
+- Researcher → Developer (Technical Verification Report — ML module import paths and Pydantic v2 schemas)
 - Orchestrator → Developer (design document type communication)
 - Developer → Reviewer (Completion Report and source files)
 - Reviewer → Orchestrator (Review Decision routing instructions)
