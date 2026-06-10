@@ -38,3 +38,6 @@ CLAUDE.local.md
 .claude/logs/
 .claude/*.log
 .claude/audit-*.log
+
+# Local MCP
+.mcp.json
