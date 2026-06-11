@@ -293,14 +293,17 @@ The eight agents use the following `tools:` values in pipeline execution order:
 
 | Agent | IntelliJ `tools:` |
 |---|---|
-| Orchestrator | `['read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'create_file', 'insert_edit_into_file', 'replace_string_in_file', 'run_subagent', 'ask_questions', 'github/issue_read', 'github/issue_write', 'github/pull_request_read']` |
+| Orchestrator | `['read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'create_file', 'insert_edit_into_file', 'replace_string_in_file', 'run_subagent', 'ask_questions', 'io.github.github/github-mcp-server/issue_read', 'io.github.github/github-mcp-server/issue_write', 'io.github.github/github-mcp-server/pull_request_read']` |
 | Planner | `['read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'create_file', 'insert_edit_into_file', 'replace_string_in_file', 'ask_questions', 'io.github.upstash/context7/*']` |
 | Designer | `['read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'create_file', 'insert_edit_into_file', 'replace_string_in_file', 'ask_questions', 'io.github.upstash/context7/*']` |
 | Researcher | `['read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'create_file', 'insert_edit_into_file', 'replace_string_in_file', 'apply_patch', 'get_errors', 'validate_cves', 'ask_questions', 'io.github.upstash/context7/*']` |
 | Developer | `['read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'create_file', 'insert_edit_into_file', 'replace_string_in_file', 'apply_patch', 'get_errors', 'validate_cves', 'ask_questions', 'io.github.upstash/context7/*']` |
-| Reviewer | `['read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'create_file', 'insert_edit_into_file', 'replace_string_in_file', 'validate_cves', 'ask_questions', 'io.github.upstash/context7/*', 'github/get_file_contents', 'github/list_commits', 'github/search_code', 'github/issue_read', 'github/issue_write', 'github/pull_request_read']` |
+| Reviewer | `['read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'create_file', 'insert_edit_into_file', 'replace_string_in_file', 'validate_cves', 'ask_questions', 'io.github.upstash/context7/*', 'io.github.github/github-mcp-server/get_file_contents', 'io.github.github/github-mcp-server/list_commits', 'io.github.github/github-mcp-server/search_code', 'io.github.github/github-mcp-server/issue_read', 'io.github.github/github-mcp-server/issue_write', 'io.github.github/github-mcp-server/pull_request_read']` |
 | Builder | `['read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'create_file', 'insert_edit_into_file', 'replace_string_in_file', 'apply_patch', 'run_in_terminal', 'get_terminal_output', 'get_errors', 'ask_questions', 'io.github.microsoft/playwright-mcp/*']` |
 | Tester | `['read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'create_file', 'insert_edit_into_file', 'replace_string_in_file', 'apply_patch', 'run_in_terminal', 'get_terminal_output', 'get_errors', 'run_subagent', 'ask_questions', 'io.github.microsoft/playwright-mcp/*']` |
+
+> [!IMPORTANT]
+> **Note on IntelliJ Wildcard Limitations:** Replace `/*` with the explicit tool configurations of that MCP server. Because wildcard annotations fail in IntelliJ, explicitly defining or adding each tool is the cleanest required workaround.
 
 ### Engineering Rules for Editing Pipeline Files
 
