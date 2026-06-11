@@ -61,6 +61,10 @@ Feature Request
  (or Orchestrator     • Component specs, async states, streaming states, accessibility
   writes waiver)      • Structured handoff notification to Orchestrator
       ▼
+  Researcher    ──── Produces TECHNICAL_VERIFICATION_REPORT.md
+ (skipped if no       • Validates tensor shapes, VRAM budget, framework API compatibility
+  ML components)      • Verified PyTorch/TensorFlow modules + Pydantic v2 I/O schemas
+      ▼
   Developer     ──── Produces source code + DEVELOPER_COMPLETION.md
       │               • Implements all architecture + design contracts
       │               • Logs specification gaps via Specification Gap Protocol
@@ -99,6 +103,7 @@ All artifacts are written to `md_docs/*/active/` and archived to `md_docs/*/arch
 md_docs/
     planner/active/        <FEATURE_NAME>_ARCHITECTURE.md
     designer/active/       <FEATURE_NAME>_DESIGN.md (Full spec or Non-UI Waiver)
+    researcher/active/     <FEATURE_NAME>_TECHNICAL_VERIFICATION_REPORT.md (if ML components present)
     developer/active/      <FEATURE_NAME>_DEVELOPER_COMPLETION.md
     reviewer/active/       <FEATURE_NAME>_REVIEW_CYCLE_N.md (N increments per cycle)
     builder/active/        <FEATURE_NAME>_BUILDER_COMPLETION.md
@@ -211,7 +216,7 @@ Files analyzed in pipeline execution order:
 
 ## Local Development Workflow
 
-GitHub Copilot (custom agents) and Claude Code (sub-agents) are parallel implementations of the same eight-agent SDLC pipeline. Every role definition, workflow step, artifact contract, escalation rule, and constraint in each agent's system prompt is identical across both environments. The implementations differ only in frontmatter syntax, file locations, and tool-name conventions. Body content — the system prompt below each frontmatter block — is always copied verbatim between formats.
+GitHub Copilot (custom agents, usable in both VS Code and IntelliJ) and Claude Code (sub-agents) are parallel implementations of the same eight-agent SDLC pipeline. Every role definition, workflow step, artifact contract, escalation rule, and constraint in each agent's system prompt is identical across both environments. The implementations differ only in frontmatter syntax, file locations, and tool-name conventions. Body content — the system prompt below each frontmatter block — is always copied verbatim between formats.
 
 ### Agent Format Comparison
 
@@ -262,35 +267,40 @@ aliases cause Class B gaps to be reclassified as Class A defects.
 - Designer, Planner, Developer, Researcher: hold `read/search/edit/web/todo` only.
 ```
 
-### Invoking Claude Code
+### Configuring GitHub Copilot in IntelliJ
 
-The Orchestrator must run as the main thread because subagents cannot spawn further subagents. Start Claude Code with the Orchestrator as the session agent so it can delegate to Planner, Designer, and all downstream pipeline agents:
+IntelliJ's GitHub Copilot plugin uses a different tool vocabulary than VS Code, and does not natively expose `web` or `browser` tools. The `web` gap is covered by the agents' training knowledge and context7 (which handles all library-specific documentation lookups). The `browser` gap is resolved by adding the Playwright MCP, which Builder and Tester require for smoke testing and component verification. No web search API key is needed. Agent body content, pipeline ordering, and all artifact contracts remain identical across VS Code and IntelliJ — only the `tools:` list values differ.
 
-```bash
-# New feature pipeline
-claude --agent orchestrator
-# Then: "Build the UserAuth feature"
+#### VS Code → IntelliJ Tool Name Mapping
 
-# Resume an interrupted or halted pipeline
-claude --agent orchestrator
-# Then: "Resume the UserAuth pipeline"
+| VS Code Tool | IntelliJ Equivalent | Resolved by |
+|---|---|---|
+| `read` | `read_file`, `open_file`, `list_dir` | Built-in (split into three tools) |
+| `search` | `file_search`, `grep_search`, `semantic_search` | Built-in (split into three tools) |
+| `edit` | `create_file`, `insert_edit_into_file`, `replace_string_in_file` | Built-in (split into three tools) |
+| `execute` | `run_in_terminal`, `get_terminal_output` | Built-in (split into two tools) |
+| `agent` | `run_subagent` | Built-in (direct rename) |
+| `todo` | `ask_questions` | Built-in |
+| `web` | *(no direct mapping)* | Training knowledge + context7 for library docs |
+| `browser` | `io.github.microsoft/playwright-mcp/*` | Playwright MCP |
+| — | `apply_patch` | IntelliJ addition — code patching |
+| — | `get_errors` | IntelliJ addition — error introspection |
+| — | `validate_cves` | IntelliJ addition — dependency security validation |
 
-# Partial pipeline entry point
-claude --agent orchestrator
-# Then: "Run only the Reviewer for UserAuth"
-```
+#### Agent Tool Lists
 
-Pipeline Analysis must be run with a **general agent** — not the Orchestrator. Pipeline Analysis is a meta-task; the Orchestrator is a subject of that analysis, not its executor:
+The eight agents use the following `tools:` values in pipeline execution order:
 
-```bash
-# Analysis-only mode — produces report and Decision Matrix, modifies nothing
-claude
-# Then: /pipeline-analysis
-
-# Refinement mode — applies all Immediate-priority fixes from the Decision Matrix
-claude
-# Then: /pipeline-analysis apply Immediate fixes
-```
+| Agent | IntelliJ `tools:` |
+|---|---|
+| Orchestrator | `['read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'create_file', 'insert_edit_into_file', 'replace_string_in_file', 'run_subagent', 'ask_questions', 'github/issue_read', 'github/issue_write', 'github/pull_request_read']` |
+| Planner | `['read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'create_file', 'insert_edit_into_file', 'replace_string_in_file', 'ask_questions', 'io.github.upstash/context7/*']` |
+| Designer | `['read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'create_file', 'insert_edit_into_file', 'replace_string_in_file', 'ask_questions', 'io.github.upstash/context7/*']` |
+| Researcher | `['read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'create_file', 'insert_edit_into_file', 'replace_string_in_file', 'apply_patch', 'get_errors', 'validate_cves', 'ask_questions', 'io.github.upstash/context7/*']` |
+| Developer | `['read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'create_file', 'insert_edit_into_file', 'replace_string_in_file', 'apply_patch', 'get_errors', 'validate_cves', 'ask_questions', 'io.github.upstash/context7/*']` |
+| Reviewer | `['read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'create_file', 'insert_edit_into_file', 'replace_string_in_file', 'validate_cves', 'ask_questions', 'io.github.upstash/context7/*', 'github/get_file_contents', 'github/list_commits', 'github/search_code', 'github/issue_read', 'github/issue_write', 'github/pull_request_read']` |
+| Builder | `['read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'create_file', 'insert_edit_into_file', 'replace_string_in_file', 'apply_patch', 'run_in_terminal', 'get_terminal_output', 'get_errors', 'ask_questions', 'io.github.microsoft/playwright-mcp/*']` |
+| Tester | `['read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'create_file', 'insert_edit_into_file', 'replace_string_in_file', 'apply_patch', 'run_in_terminal', 'get_terminal_output', 'get_errors', 'run_subagent', 'ask_questions', 'io.github.microsoft/playwright-mcp/*']` |
 
 ### Engineering Rules for Editing Pipeline Files
 
