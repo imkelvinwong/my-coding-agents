@@ -62,7 +62,7 @@ Search `md_docs/*/active/` for all files matching the pattern `<FEATURE_NAME>_*.
 
 Before reading any contract artifact from `md_docs/*/active/`, scan `md_docs/tester/staging/` for all files matching `<FEATURE_NAME>_*.md`. This scan must be executed before Step 3 — staging file presence directly overrides Tester phase completion status determined in Step 4, and that override must be established before the artifact inventory is assembled.
 
-Staging files in `md_docs/tester/staging/` are ephemeral Fan-Out artifacts defined in `SKILL.md` Core Rule 6. Their presence during session-recovery means a Fan-Out was initiated but never consolidated in a prior run — either because the Fan-Out was aborted by a heartbeat timeout or a concurrency control violation, or because the pipeline was interrupted between Fan-Out completion and the Orchestrator's archive operation. In either case, staging files are never valid contract state and must be treated as orphans.
+Staging files in `md_docs/tester/staging/` are ephemeral Fan-Out artifacts defined in `markdown-file-management/SKILL.md` Core Rule 6. Their presence during session-recovery means a Fan-Out was initiated but never consolidated in a prior run — either because the Fan-Out was aborted by a heartbeat timeout or a concurrency control violation, or because the pipeline was interrupted between Fan-Out completion and the Orchestrator's archive operation. In either case, staging files are never valid contract state and must be treated as orphans.
 
 **If no files matching `<FEATURE_NAME>_*.md` are found in `md_docs/tester/staging/`:**
 
@@ -76,7 +76,7 @@ Apply the following cleanup procedure exactly. Do not attempt to read or evaluat
 
 2. **Generate one UTC timestamp** in `YYYYMMDDHHMMSS` format for the orphaned staging cleanup batch. All staging files cleaned up in this step share this single timestamp so the cleanup batch is identifiable as one operation.
 
-3. **Archive each orphaned staging file** using the staging archive path defined in `SKILL.md`: move each file from `md_docs/tester/staging/<FEATURE_NAME>_<DOC_TYPE>.md` to `md_docs/tester/archive/<FEATURE_NAME>_<DOC_TYPE>_YYYYMMDDHHMMSS.md`. Create `md_docs/tester/archive/` if it does not exist.
+3. **Archive each orphaned staging file** using the staging archive path defined in `markdown-file-management/SKILL.md`: move each file from `md_docs/tester/staging/<FEATURE_NAME>_<DOC_TYPE>.md` to `md_docs/tester/archive/<FEATURE_NAME>_<DOC_TYPE>_YYYYMMDDHHMMSS.md`. Create `md_docs/tester/archive/` if it does not exist.
 
 4. **Set the Tester phase override flag.** Regardless of what the Tester contract artifacts in `md_docs/tester/active/` show, the Tester phase must be treated as incomplete. If `<FEATURE_NAME>_TEST_COMPLETION.md` exists in `md_docs/tester/active/` and would otherwise satisfy the Step 4 Tester completion condition, that completion condition is overridden by this flag. The re-entry point determined in Step 4 must be Tester or earlier — it cannot be a phase after Tester. This override exists because the presence of orphaned staging files proves the prior pipeline run's Fan-Out was not completed and consolidated, meaning any TEST_COMPLETION.md present was either written before Fan-Out ran or written in an inconsistent state. Do not trust its content for phase completion purposes.
 
@@ -95,7 +95,7 @@ Read every file found in Step 1. For each file, record its path, the agent that 
 | Agent | File | Required Fields for Completeness |
 |---|---|---|
 | Planner | `<FEATURE_NAME>_ARCHITECTURE.md` | All 11 section headers present; Section 10 contains a fenced `json` code block that parses successfully into an object with all four required keys: `feature_name` (string), `total_story_points` (integer), `phase_breakdown` (array), and `execution_recommendation` (one of the three permitted string literals). The prose Orchestrator Scheduling Note line is present for human readability but is not evaluated for completeness — the JSON block is the authoritative completeness signal. |
-| Designer | `<FEATURE_NAME>_DESIGN.md` | Either: all 10 section headers present (full specification), OR: the document header contains "No UI/UX design specification is required for this feature" and all four waiver elements defined in the Non-UI Waiver Schema in `SKILL.md` are present and non-empty |
+| Designer | `<FEATURE_NAME>_DESIGN.md` | Either: all 10 section headers present (full specification), OR: the document header contains "No UI/UX design specification is required for this feature" and all four waiver elements defined in the Non-UI Waiver Schema in `markdown-file-management/SKILL.md` are present and non-empty |
 | Researcher | `<FEATURE_NAME>_TECHNICAL_VERIFICATION_REPORT.md` | All five section headers present: "Section 1 — Validation Summary", "Section 2 — Mathematical Proofs", "Section 3 — AI Core Modules", "Section 4 — Pydantic v2 I/O Schemas", and "Section 5 — Developer Integration Notes"; "Ready for Developer" field present and reads "Yes". If the file is absent and the architecture document contains no ML components (no model files in Section 3, no ML framework in Section 9), classify as complete (skipped — no ML components). |
 | Developer | `<FEATURE_NAME>_DEVELOPER_COMPLETION.md` | "Files Created", "Files Modified", "Self-Review Checklist", and "Ready for Reviewer" fields all present; "Ready for Reviewer" reads "Yes" |
 | Reviewer | `<FEATURE_NAME>_REVIEW_CYCLE_N.md` (highest N) | `decision_code` field present and reads exactly `APPROVED` or `REJECTED` (uppercase, exact string match — do not evaluate surrounding prose as a substitute for this field) |
@@ -165,7 +165,7 @@ The UI Scope Gate decision must be recovered if it is not already recorded in a 
 
 For any file classified as incomplete in Step 3, apply the following rules. The goal is to ensure the pipeline resumes against clean, valid contracts — not against partially-written files from an interrupted session:
 
-- **If the incomplete file belongs to a phase earlier than the re-entry point determined in Step 4:** Archive the incomplete file using the archive operation defined in `SKILL.md` (append a UTC timestamp before the `.md` extension and move it to `md_docs/{agent}/archive/`). Set the re-entry point to this earlier phase so the producing agent re-runs and writes a fresh complete contract. Record the disposition in the Recovery Report.
+- **If the incomplete file belongs to a phase earlier than the re-entry point determined in Step 4:** Archive the incomplete file using the archive operation defined in `markdown-file-management/SKILL.md` (append a UTC timestamp before the `.md` extension and move it to `md_docs/{agent}/archive/`). Set the re-entry point to this earlier phase so the producing agent re-runs and writes a fresh complete contract. Record the disposition in the Recovery Report.
 
 - **If the incomplete file belongs to the re-entry phase itself:** The agent for that phase must re-run from the beginning of its workflow. Archive the incomplete file before the agent writes a new one. An agent that finds an existing file at its output path may append to it rather than replace it — archiving first prevents this.
 
@@ -294,7 +294,7 @@ After producing the Recovery Report, take exactly one of the following actions b
 
 Wait for the user to reply with one of:
 - **"Proceed"** or equivalent → Resume from the re-entry point.
-- **"Restart from beginning"** → Archive all current active files for this feature using the archive operation defined in `SKILL.md` and proceed with standard Pre-Execution Planning for a fresh run.
+- **"Restart from beginning"** → Archive all current active files for this feature using the archive operation defined in `markdown-file-management/SKILL.md` and proceed with standard Pre-Execution Planning for a fresh run.
 - **"Cancel"** or no response → Halt and produce a halt record in the Pipeline Execution Report.
 
 **Halt — Unrecoverable:** If the architecture document is missing or incomplete and the feature scope cannot be reconstructed, or if the JSON scheduling payload in Section 10 is absent or unparseable and no fallback value exists in the Pipeline Execution Report, or if contradictory artifact states exist that cannot be resolved by any rule in Steps 6 or 7, produce the Recovery Report with a "Halt — Unrecoverable" decision. State the specific reason clearly (e.g., "Architecture document absent — cannot determine scope, UI Scope Gate, or effort gate values" or "Section 10 JSON payload malformed — total_story_points could not be extracted and no Pipeline Execution Report fallback exists"). Present this to the user and request manual guidance. Do not attempt a partial recovery or guess at the re-entry point.
@@ -315,4 +315,4 @@ Wait for the user to reply with one of:
 - **Do not resume past a phase that requires user confirmation without receiving that confirmation in the current session.** Prior session confirmation is not carried over unless it is recorded in the Pipeline Execution Report with a timestamp.
 - **Do not modify any specification document during recovery.** Recovery is a read, assess, and route operation. Modifying a specification during recovery invalidates the staleness analysis performed in Step 7.
 - **Do not invoke this prompt recursively.** If recovery itself encounters an unresolvable state, produce a Halt report and surface the specific failure to the user. Do not attempt to recover the recovery.
-- **Use the archive operation defined in `SKILL.md`** for all archiving actions — append a single UTC timestamp to the filename before `.md` and move to `md_docs/{agent}/archive/` for contract artifacts or `md_docs/tester/archive/` for staging artifacts. Do not invent an alternative archive format.
+- **Use the archive operation defined in `markdown-file-management/SKILL.md`** for all archiving actions — append a single UTC timestamp to the filename before `.md` and move to `md_docs/{agent}/archive/` for contract artifacts or `md_docs/tester/archive/` for staging artifacts. Do not invent an alternative archive format.

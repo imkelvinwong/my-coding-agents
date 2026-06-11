@@ -16,7 +16,7 @@ Run this prompt whenever you need a structured evaluation of the pipeline files.
 - **When an agent produces unexpected output** — to determine whether the failure is a gap in the agent's own file or a gap in an upstream file that produces bad input.
 - **On a regular improvement cadence** — after every 3–5 pipeline runs, to surface accumulated drift between files.
 
-**Which agent to use:** Run this prompt with a **general Claude agent** — not the Orchestrator. Pipeline analysis is a meta-task: evaluating the pipeline, not running it. The Orchestrator's role is pipeline execution and delegation; using it here conflates its evaluation-subject role with its executor role. A general agent with `read` and `search` tool access is sufficient. No `agent` invocation tool is required because this prompt produces a report, not a pipeline run.
+**Which agent to use:** Run this prompt with a **general agent** — not the Orchestrator. Pipeline analysis is a meta-task: evaluating the pipeline, not running it. The Orchestrator's role is pipeline execution and delegation; using it here conflates its evaluation-subject role with its executor role. A general agent with `read` and `search` tool access is sufficient. No `agent` invocation tool is required because this prompt produces a report, not a pipeline run.
 
 **Analysis mode vs. Refinement mode:**
 
@@ -157,7 +157,7 @@ Analyze the following files in the order listed. The order reflects pipeline exe
 
 ### Skill Files
 
-8. **`SKILL.md`** (`markdown-file-management`) — The path resolution and archiving skill. Evaluate whether the Agent Output Path Reference table covers every agent's deliverable, whether the archive operation instructions are complete enough to be executed without consulting another file, whether the prohibition on individual agents archiving their own files is unambiguous, and whether the legacy path deprecation notice is sufficient to prevent agents from writing to the wrong location.
+8. **`markdown-file-management/SKILL.md`** — The path resolution and archiving skill. Evaluate whether the Agent Output Path Reference table covers every agent's deliverable, whether the archive operation instructions are complete enough to be executed without consulting another file, whether the prohibition on individual agents archiving their own files is unambiguous, and whether the legacy path deprecation notice is sufficient to prevent agents from writing to the wrong location.
 
 ### Prompt Files
 
